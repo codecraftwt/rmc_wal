@@ -23,7 +23,7 @@ const EditInwardScreen = ({route, navigation}) => {
   };
 
   const handleSave = () => {
-    console.log('Updated Material:', form);
+    // console.log('Updated Material:', form);
     navigation.goBack();
   };
 

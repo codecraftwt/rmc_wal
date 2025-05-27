@@ -18,7 +18,7 @@ export const loginUser = createAsyncThunk(
       });
 
       const data = response.data;
-      console.log('API Response:', data);
+      // console.log('API Response:', data);
 
       if (data?.status && data?.token) {
         await setToken(data.token);

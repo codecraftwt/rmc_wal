@@ -14,6 +14,8 @@ import {h, w, f} from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
+import {useDispatch, useSelector} from 'react-redux';
+import {fetchUpcomingOrders} from '../../../Redux/slices/orderSlice';
 
 const initialOrders = [
   {
@@ -28,6 +30,35 @@ const initialOrders = [
     description: 'Urgent order for construction project',
     status: 'confirmed',
   },
+  // {
+  //   id: '1',
+  //   quantity: '1500 kg',
+  //   order_date: '2023-06-15',
+  //   on_site_time: '09:00 AM',
+  //   address: '123 Industrial Area, Mumbai',
+  //   order_type: 'Pumping/Dumping',
+  //   description: 'Urgent order for construction project',
+  //   confirm: "0",
+  //   customer_details: 'Robert Smith',
+  //   product_name: 'A-1 Premium',
+  //   company: "Maruti Bhandigre"
+  ////   status: 'confirmed',
+  // },
+
+  // "id": "8",
+  //           "customer_id": "4",
+  //           "product_grade_id": "8",
+  //           "quantity": "6.00",
+  //           "order_date": "2025-04-30",
+  //           "on_site_time": "15:35:00",
+  //           "address": "Kolhapur",
+  //           "order_type": "1",
+  //           "description": "api test data",
+  //           "confirm": "0",
+  //           "created_at": "2025-05-26 16:47:14",
+  //           "material_id": "8",
+  //           "product_name": "M-25 PPC",
+  //           "company": "Maruti Bhandigre"
   {
     id: '2',
     customer_details: 'Rubby',
@@ -152,72 +183,78 @@ const OrderCard = ({order, navigation, onDelete}) => {
 };
 
 const UpcomingOrders = ({navigation, route}) => {
-  const [orders, setOrders] = useState(initialOrders);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAll, setShowAll] = useState(false);
+
+  const dispatch = useDispatch();
+  const {upcomingOrders, loading, error} = useSelector(state => {
+    console.log('Redux State in selector:', {
+      loading: state.order.loading,
+      error: state.order.error,
+      hasOrders: !!state.order.upcomingOrders,
+      ordersData: state.order.upcomingOrders
+    });
+    return state.order;
+  });
+
+  useEffect(() => {
+    // console.log('Component mounted - dispatching fetchUpcomingOrders');
+    dispatch(fetchUpcomingOrders());
+  }, [dispatch]);
+
+  // Debug logs for state changes
+  useEffect(() => {
+    console.log('State changed:', {
+      loading,
+      error,
+      hasOrders: !!upcomingOrders,
+      ordersData: upcomingOrders
+    });
+  }, [upcomingOrders, loading, error]);
 
   useEffect(() => {
     const backAction = () => {
       navigation.navigate('MainTabs');
       return true;
     };
-
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       backAction,
     );
-
     return () => backHandler.remove();
   }, [navigation]);
 
-  React.useEffect(() => {
-    if (route.params?.newOrder) {
-      setOrders(prev => [route.params.newOrder, ...prev]);
-      navigation.setParams({newOrder: undefined});
-    }
-  }, [route.params?.newOrder]);
-
-  React.useEffect(() => {
-    if (route.params?.updatedOrder) {
-      setOrders(prev =>
-        prev.map(order =>
-          order.id === route.params.updatedOrder.id
-            ? route.params.updatedOrder
-            : order,
-        ),
-      );
-      navigation.setParams({updatedOrder: undefined});
-    }
-  }, [route.params?.updatedOrder]);
-
-  const handleDelete = id => {
-    Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this order?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () =>
-            setOrders(prev => prev.filter(order => order.id !== id)),
-        },
-      ],
-    );
+  // Transform API data to match the UI requirements
+  const transformOrder = order => {
+    // console.log('Transforming order:', order); // Debug log
+    return {
+      id: order.id,
+      customer_details: order.company || 'Unknown Customer',
+      productGrade: order.product_name || 'Unknown Product',
+      quantity: `${order.quantity} kg`,
+      date: order.order_date || 'No date',
+      onsiteTime: order.on_site_time || 'No time',
+      address: order.address || 'No address',
+      type: order.order_type === '1' ? 'Pumping/Dumping' : 'Delivery',
+      description: order.description || 'No description',
+      status: order.confirm === '1' ? 'confirmed' : 'pending',
+    };
   };
 
-  const filteredOrders = orders.filter(order => {
+  // Transform the orders from the API response
+  let transformedOrders = [];
+  if (upcomingOrders && upcomingOrders.data) {
+    transformedOrders = upcomingOrders.data.map(transformOrder);
+  }
+  // console.log('Transformed Orders:', transformedOrders); // Debug log
+
+  const filteredOrders = transformedOrders.filter(order => {
     const matchesSearch =
-      order.customer_details
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      order.productGrade.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.description.toLowerCase().includes(searchQuery.toLowerCase());
+      order.customer_details?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.productGrade?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       filterStatus === 'all' || order.status === filterStatus;
@@ -225,11 +262,56 @@ const UpcomingOrders = ({navigation, route}) => {
     return matchesSearch && matchesStatus;
   });
 
+  // console.log('Filtered Orders:', filteredOrders); // Debug log
+
   const displayOrders = showAll
     ? filteredOrders
     : filteredOrders.slice(-3).reverse();
 
+  // console.log('Display Orders:', displayOrders); // Debug log
+
   const shouldShowToggle = filteredOrders.length > 3;
+
+  const handleDelete = id => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this order?',
+      [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () =>
+            console.log(`Delete logic for order id ${id} goes here.`),
+        },
+      ],
+    );
+  };
+
+  if (loading) {
+    // console.log('Rendering loading state');
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading orders...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    // console.log('Rendering error state:', error);
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error loading orders: {error}</Text>
+      </View>
+    );
+  }
+
+  // Debug log for final render
+  console.log('Rendering main view with orders:', {
+    hasOrders: !!upcomingOrders,
+    ordersData: upcomingOrders,
+    displayOrdersLength: displayOrders.length
+  });
 
   return (
     <>
@@ -240,6 +322,7 @@ const UpcomingOrders = ({navigation, route}) => {
         end={{x: 1, y: 0}}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
+
       <LinearGradient
         colors={['#F8FAFF', '#F0F4FF']}
         style={styles.container}
@@ -308,9 +391,7 @@ const UpcomingOrders = ({navigation, route}) => {
             <View style={styles.emptyContainer}>
               <Icon name="file-tray-outline" size={f(8)} color="#CCCCCC" />
               <Text style={styles.emptyText}>No orders found</Text>
-              {searchQuery || filterStatus !== 'all' ? (
-                ''
-              ) : (
+              {searchQuery || filterStatus !== 'all' ? null : (
                 <TouchableOpacity
                   style={styles.addEmptyButton}
                   onPress={() => navigation.navigate('AddOrder')}>
@@ -520,6 +601,22 @@ const styles = StyleSheet.create({
   seeAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: w(4),
+  },
+  errorText: {
+    color: '#F7374F',
+    fontSize: f(2),
+    textAlign: 'center',
   },
 });
 export default UpcomingOrders;

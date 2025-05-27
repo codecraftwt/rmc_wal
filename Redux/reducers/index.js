@@ -6,6 +6,5 @@ import addOrderReducer from '../slices/addOrderSlice';
 export const rootReducer = combineReducers({
   auth: authReducer,
   materialInward: materialInwardReducer,
-  addOrder: addOrderReducer,
-  // add more reducers here
+  order: orderReducer,
 });

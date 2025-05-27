@@ -15,6 +15,10 @@ import Header from '../../component/Header';
 
 const OrderDetails = ({route, navigation}) => {
   const {order} = route.params;
+  // console.log("order_details",order);
+  // console.log("order_details_type",order?.type);
+
+
     useEffect(() => {
       const backAction = () => {
         navigation.goBack(); 
@@ -84,7 +88,7 @@ const OrderDetails = ({route, navigation}) => {
 
               <DetailRow
                 icon="cube-outline"
-                label="Product Grade:"
+                label="Product Name:"
                 value={order.productGrade}
               />
               <DetailRow
@@ -95,7 +99,7 @@ const OrderDetails = ({route, navigation}) => {
               <DetailRow
                 icon="pricetag-outline"
                 label="Type:"
-                value={order.type}
+                value={order?.type}
               />
             </View>
 

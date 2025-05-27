@@ -9,7 +9,7 @@ export const fetchMaterialInward = createAsyncThunk(
     try {
       const response = await AxiosInstance.get(`${baseURL}/material_inwards_api`);
       if (response.data.status) {
-         console.log("Material Inward data -->", response.data.data);
+        //  console.log("Material Inward data -->", response.data.data);
         return response.data.data;
   
       } else {

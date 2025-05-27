@@ -97,10 +97,21 @@ const AddOrder = ({ navigation }) => {
     handleChange('on_site_time', formattedTime);
   };
 
-  const handleSubmit = () => {
-    dispatch(addUpcomingOrder(formData));
+const handleSubmit = () => {
+  if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
+    Alert.alert('Error', 'Please fill in all required fields');
+    return;
+  }
+
+  const payload = {
+    ...formData,
+    confirm: 1,
   };
 
+  // console.log("Order payload --->", payload);
+
+  dispatch(addUpcomingOrder(payload));
+};
   return (
     <>
       <LinearGradient

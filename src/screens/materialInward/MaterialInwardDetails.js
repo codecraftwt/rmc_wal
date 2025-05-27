@@ -16,7 +16,7 @@ import Header from '../../component/Header';
 
 const MaterialInwardDetails = ({route, navigation}) => {
   const {material} = route.params;
-  console.log("material ---->", material);
+  // console.log("material ---->", material);
   
 
     useEffect(() => {
