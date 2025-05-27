@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,28 +7,36 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  BackHandler
+  BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import {h, w, f} from 'walstar-rn-responsive';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { h, w, f } from 'walstar-rn-responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import DatePicker from 'react-native-date-picker';
 import { useDispatch, useSelector } from 'react-redux';
-import { addUpcomingOrder, resetOrderState } from '../../../Redux/slices/orderSlice';
+import { addUpcomingOrder, resetAddOrderState } from '../../../Redux/slices/addOrderSlice';
+// import { addUpcomingOrder, resetAddOrderState } from '../';
 
-const AddOrder = ({navigation, route}) => {
+const AddOrder = ({ navigation }) => {
+  const dispatch = useDispatch();
+
+  const { loading, success, error } = useSelector(state => state.addOrder);
+  console.log("Addorder ---->", { loading, success, error });
+
+
   const [formData, setFormData] = useState({
-    customer_details: '',
-    productGrade: '',
+    customer_name: '',
+    product_grade: '',
     quantity: '',
     date: '',
-    onsiteTime: '',
+    on_site_time: '',
     address: '',
-    type: '',
+    order_type: '',
     description: '',
-    status: 'pending',
+    confirm: '0',
   });
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -36,22 +44,33 @@ const AddOrder = ({navigation, route}) => {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
 
-  const dispatch = useDispatch();
-const { loading, success, error } = useSelector(state => state.order);
+  useEffect(() => {
+    const backAction = () => {
+      navigation.goBack();
+      return true;
+    };
 
-    useEffect(() => {
-      const backAction = () => {
-        navigation.goBack(); 
-        return true;
-      };
-  
-      const backHandler = BackHandler.addEventListener(
-        'hardwareBackPress',
-        backAction
-      );
-  
-      return () => backHandler.remove();
-    }, [navigation]);
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [navigation]);
+
+  useEffect(() => {
+    if (success) {
+      Alert.alert('Success', 'Order added successfully', [
+        {
+          text: 'OK',
+          onPress: () => {
+            dispatch(resetAddOrderState());
+            navigation.navigate('UpcomingOrders');
+          },
+        },
+      ]);
+    }
+
+    if (error) {
+      Alert.alert('Error', error.toString());
+    }
+  }, [success, error]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({
@@ -75,82 +94,45 @@ const { loading, success, error } = useSelector(state => state.order);
       minute: '2-digit',
       hour12: true,
     });
-    handleChange('onsiteTime', formattedTime);
+    handleChange('on_site_time', formattedTime);
   };
 
-  // const handleSubmit = () => {
-  //   if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
-  //     Alert.alert('Error', 'Please fill in all required fields');
-  //     return;
-  //   }
-
-  //   const newOrder = {
-  //     id: Math.random().toString(36).substr(2, 9),
-  //     ...formData,
-  //   };
-
-  //   navigation.navigate('UpcomingOrders', {newOrder});
-  // };
-
-  useEffect(() => {
-  if (success) {
-    Alert.alert('Success', 'Order added successfully');
-    dispatch(resetOrderState());
-    navigation.navigate('UpcomingOrders');
-  }
-  if (error) {
-    Alert.alert('Error', error);
-  }
-}, [success, error]);
-
-const handleSubmit = () => {
-  if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
-    Alert.alert('Error', 'Please fill in all required fields');
-    return;
-  }
-
-  const payload = {
-    ...formData,
-    confirm: 1,
+  const handleSubmit = () => {
+    dispatch(addUpcomingOrder(formData));
   };
 
-  console.log("Order payload --->", payload);
-
-  dispatch(addUpcomingOrder(payload));
-};
   return (
     <>
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
+
       <LinearGradient
         colors={['#F8FAFF', '#F0F4FF']}
         style={styles.container}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}>
-        <Header title="Add New Order" navigation={navigation} showBackButton='arrow-back'/>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
+        <Header title="Add New Order" navigation={navigation} showBackButton="arrow-back" />
 
         <ScrollView contentContainerStyle={styles.formContainer}>
           <FormField
             icon="person-outline"
             label="Customer Name"
-            value={formData.customer_details}
-            onChangeText={text => handleChange('customer_details', text)}
+            value={formData.customer_name}
+            onChangeText={text => handleChange('customer_name', text)}
             required
           />
-
           <FormField
             icon="cube-outline"
             label="Product Grade"
-            value={formData.productGrade}
-            onChangeText={text => handleChange('productGrade', text)}
+            value={formData.product_grade}
+            onChangeText={text => handleChange('product_grade', text)}
             required
           />
-
           <FormField
             icon="scale-outline"
             label="Quantity"
@@ -161,33 +143,19 @@ const handleSubmit = () => {
             unit="Kg"
           />
 
+          {/* Date Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldLabel}>
-              <Icon
-                name="calendar-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
-              />
-              <Text style={styles.labelText}>
-                Date
-                <Text style={styles.required}> *</Text>
-              </Text>
+              <Icon name="calendar-outline" size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
+              <Text style={styles.labelText}>Date<Text style={styles.required}> *</Text></Text>
             </View>
-            <TouchableOpacity
-              onPress={() => setDatePickerOpen(true)}
-              style={styles.dateInput}>
-              <Text
-                style={[
-                  styles.dateInputText,
-                  !formData.date && {color: '#999'},
-                ]}>
+            <TouchableOpacity onPress={() => setDatePickerOpen(true)} style={styles.dateInput}>
+              <Text style={[styles.dateInputText, !formData.date && { color: '#999' }]}>
                 {formData.date || 'Select a date'}
               </Text>
               <Icon name="calendar" size={f(2.5)} color="#888" />
             </TouchableOpacity>
           </View>
-
           <DatePicker
             modal
             open={datePickerOpen}
@@ -198,40 +166,26 @@ const handleSubmit = () => {
             minimumDate={new Date()}
           />
 
+          {/* Time Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldLabel}>
-              <Icon
-                name="time-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
-              />
-              <Text style={styles.labelText}>
-                Onsite Time
-                <Text style={styles.required}> *</Text>
-              </Text>
+              <Icon name="time-outline" size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
+              <Text style={styles.labelText}>Onsite Time<Text style={styles.required}> *</Text></Text>
             </View>
-            <TouchableOpacity
-              onPress={() => setTimePickerOpen(true)}
-              style={styles.dateInput}>
-              <Text
-                style={[
-                  styles.dateInputText,
-                  !formData.onsiteTime && {color: '#999'},
-                ]}>
-                {formData.onsiteTime || 'Select time'}
+            <TouchableOpacity onPress={() => setTimePickerOpen(true)} style={styles.dateInput}>
+              <Text style={[styles.dateInputText, !formData.on_site_time && { color: '#999' }]}>
+                {formData.on_site_time || 'Select time'}
               </Text>
               <Icon name="time" size={f(2.5)} color="#888" />
             </TouchableOpacity>
           </View>
-
           <DatePicker
             modal
             open={timePickerOpen}
             date={selectedTime}
             onConfirm={handleTimeConfirm}
             onCancel={() => setTimePickerOpen(false)}
-            mode="time" 
+            mode="time"
           />
 
           <FormField
@@ -242,15 +196,13 @@ const handleSubmit = () => {
             multiline
             required
           />
-
           <FormField
             icon="pricetag-outline"
             label="Type"
-            value={formData.type}
-            onChangeText={text => handleChange('type', text)}
+            value={formData.order_type}
+            onChangeText={text => handleChange('order_type', text)}
             placeholder="Pumping/Dumping etc."
           />
-
           <FormField
             icon="document-text-outline"
             label="Description"
@@ -259,19 +211,20 @@ const handleSubmit = () => {
             multiline
           />
 
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
             <LinearGradient
               colors={['#4CAF50', '#66BB6A']}
               style={styles.submitGradient}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}>
-              <Text style={styles.submitButtonText}>Create Order</Text>
-              <Icon
-                name="checkmark"
-                size={f(2.5)}
-                color="white"
-                style={styles.submitIcon}
-              />
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.submitButtonText}>Create Order</Text>
+                  <Icon name="checkmark" size={f(2.5)} color="white" style={styles.submitIcon} />
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>
@@ -280,6 +233,7 @@ const handleSubmit = () => {
   );
 };
 
+// FormField Component (keep same)
 const FormField = ({
   icon,
   label,
@@ -291,12 +245,7 @@ const FormField = ({
 }) => (
   <View style={styles.fieldContainer}>
     <View style={styles.fieldLabel}>
-      <Icon
-        name={icon}
-        size={f(2.5)}
-        color="#F7374F"
-        style={styles.fieldIcon}
-      />
+      <Icon name={icon} size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
       <Text style={styles.labelText}>
         {label}
         {required && <Text style={styles.required}> *</Text>}
@@ -305,7 +254,7 @@ const FormField = ({
     <View style={styles.inputContainer}>
       {unit && <Text style={styles.unitText}>{unit}</Text>}
       <TextInput
-        style={[styles.input, unit && {paddingLeft: w(8)}]}
+        style={[styles.input, unit && { paddingLeft: w(8) }]}
         value={value}
         onChangeText={onChangeText}
         {...props}

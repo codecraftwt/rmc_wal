@@ -1,11 +1,11 @@
 import { combineReducers } from 'redux';
 import authReducer from '../slices/authSlice';
 import materialInwardReducer from '../slices/materialInwardSlice';
-import orderReducer from '../slices/orderSlice';
+import addOrderReducer from '../slices/addOrderSlice';
 
 export const rootReducer = combineReducers({
   auth: authReducer,
   materialInward: materialInwardReducer,
-  order: orderReducer,
+  addOrder: addOrderReducer,
   // add more reducers here
 });
