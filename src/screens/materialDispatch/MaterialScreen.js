@@ -238,7 +238,7 @@ const MaterialScreen = ({navigation}) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             onPress={() => setShowDateFilter(true)}
             style={styles.filterButton}
           >
@@ -247,7 +247,7 @@ const MaterialScreen = ({navigation}) => {
               size={f(2.5)} 
               color={dateFilterApplied ? "#F7374F" : "#888"} 
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
               <Icon name="close-circle" size={f(2.5)} color="#888" />

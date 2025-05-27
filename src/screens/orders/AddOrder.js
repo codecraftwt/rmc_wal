@@ -23,7 +23,7 @@ import { addUpcomingOrder, resetAddOrderState } from '../../../Redux/slices/addO
 const AddOrder = ({ navigation }) => {
   const dispatch = useDispatch();
 
-  const { loading, success, error } = useSelector(state => state.addOrder);
+  const { loading, success, error } = useSelector(state => state.order);
   console.log("Addorder ---->", { loading, success, error });
 
 
@@ -98,15 +98,15 @@ const AddOrder = ({ navigation }) => {
   };
 
 const handleSubmit = () => {
-  if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
-    Alert.alert('Error', 'Please fill in all required fields');
-    return;
-  }
+  // if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
+  //   Alert.alert('Error', 'Please fill in all required fields');
+  //   return;
+  // }
 
-  const payload = {
-    ...formData,
-    confirm: 1,
-  };
+  // const payload = {
+  //   ...formData,
+  //   confirm: 1,
+  // };
 
   // console.log("Order payload --->", payload);
 

@@ -11,65 +11,48 @@ import {
   ScrollView,
   StatusBar,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import {h, w, f} from 'walstar-rn-responsive';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { useDispatch, useSelector } from 'react-redux';
-// import { loginUser } from '../../Redux/slices/authSlice';
-import { getToken } from '../../Redux/storage/Storage';
-import { loginUser } from '../../Redux/slices/authSlice';
+import {useDispatch, useSelector} from 'react-redux';
+import {loginUser} from '../../Redux/slices/authSlice';
 
 const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-const dispatch = useDispatch();
-const {loading, error, user, token} = useSelector(state => state.auth);
- // or state.auth if you name the slice differently
+  const dispatch = useDispatch();
+  const {loading, error, user, token} = useSelector(state => state.auth);
 
-const handleLogin = () => {
-  if (!username || !password) {
-    Alert.alert('Validation', 'Please enter both email and password.');
-    return;
-  }
-
-  const payload = {
-    email: username,
-    password: password,
-  };
-
-  // dispatch(loginUser(payload))
-  // .unwrap()
-  // .then(res => {
-  //   Alert.alert('Success', 'Login successful');
-  //   getToken().then(token => {
-  //     console.log('Stored Token:', token);
-  //   });
-  //   navigation.navigate('MainTabs');
-  // })
-  // .catch(err => {
-  //   console.error('Login failed:', err);
-  //   Alert.alert('Login Failed', err || 'Invalid credentials');
-  // });
-
-  dispatch(loginUser(payload))
-  .unwrap()
-  .then(res => {
-    if (res.token) {
-      Alert.alert('Success', 'Login successful');
-      navigation.navigate('MainTabs');
-    } else {
-      Alert.alert('Login Failed', res.message || 'Invalid credentials');
+  const handleLogin = () => {
+    if (!username || !password) {
+      Alert.alert('Validation', 'Please enter both email and password.');
+      return;
     }
-  })
-  .catch(err => {
-    console.error('Login failed:', err);
-    Alert.alert('Login Failed', err || 'Invalid credentials');
-  });
 
-};
+    const payload = {
+      email: username,
+      password: password,
+    };
+
+    dispatch(loginUser(payload))
+      .unwrap()
+      .then(res => {
+        if (res.token) {
+          Alert.alert('Success', 'Login successful');
+          navigation.navigate('MainTabs');
+        } else {
+          Alert.alert('Login Failed', res.message || 'Invalid credentials');
+        }
+      })
+      .catch(err => {
+        console.error('Login failed:', err);
+        Alert.alert('Login Failed', err || 'Invalid credentials');
+      });
+  };
 
   return (
     <>
@@ -141,8 +124,15 @@ const handleLogin = () => {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Log In</Text>
+              <TouchableOpacity
+                style={[styles.button, loading && styles.disabledButton]}
+                onPress={handleLogin}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Log In</Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.forgotPassword}>
@@ -267,6 +257,9 @@ const styles = StyleSheet.create({
     fontSize: f(2.1),
     fontWeight: 'bold',
     textDecorationLine: 'none',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

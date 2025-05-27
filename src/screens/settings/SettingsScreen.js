@@ -31,9 +31,6 @@ const SettingsScreen = () => {
     <>
     <Header title="Setting Screen" />
     <View style={styles.container}>
-      
-      <Text style={styles.text}>Settings Screen</Text>
-
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -56,6 +53,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+     marginTop:40
   },
   logoutText: {
     color: '#fff',

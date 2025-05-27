@@ -13,15 +13,20 @@ import OrderDetails from '../screens/orders/OrderDetails';
 import EditOrder from '../screens/orders/EditOrder';
 import AddOrder from '../screens/orders/AddOrder';
 import {useSelector} from 'react-redux';
+import SplashScreen from '../signinSignup/SplashScreen';
 
 const Stack = createStackNavigator();
 
 export const AppNavigator = () => {
   const token = useSelector(state => state.auth.token);
   // console.log('AppNavigator Token --->', token);
-  // Get persisted token
+
   return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
+    // <Stack.Navigator screenOptions={{headerShown: false}}>
+    <Stack.Navigator
+      screenOptions={{headerShown: false}}
+      initialRouteName="Splash">
+      <Stack.Screen name="Splash" component={SplashScreen} />
       {token ? (
         <>
           <Stack.Screen

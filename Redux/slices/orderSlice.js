@@ -72,114 +72,6 @@ export const deleteUpcomingOrder = createAsyncThunk(
   },
 );
 
-// export const editUpcomingOrder = createAsyncThunk(
-//   'orders/editUpcomingOrder',
-//   async ({id, orderData}, {rejectWithValue}) => {
-//     try {
-//       const formData = new FormData();
-
-//       console.log('Edit Order Data:', {
-//         id,
-//         orderData,
-//       });
-
-//       formData.append('id', id.toString());
-//       formData.append('customer_name', orderData.customer_id?.toString() || '');
-//       formData.append(
-//         'product_grade',
-//         orderData.product_grade_id?.toString() || '',
-//       );
-//       formData.append('quantity', orderData.quantity?.toString() || '');
-//       formData.append('date', orderData.order_date || '');
-//       formData.append('on_site_time', orderData.on_site_time || '');
-//       formData.append('address', orderData.address || '');
-//       formData.append('order_type', orderData.order_type?.toString() || '');
-
-//       if (orderData.description) {
-//         formData.append('description', orderData.description);
-//       }
-//       if (orderData.confirm !== undefined) {
-//         formData.append('confirm', orderData.confirm ? '1' : '0');
-//       }
-
-//       console.log('Form Data being sent:', {
-//         id: formData.get('id'),
-//         customer_name: formData.get('customer_name'),
-//         product_grade: formData.get('product_grade'),
-//         quantity: formData.get('quantity'),
-//         date: formData.get('date'),
-//         on_site_time: formData.get('on_site_time'),
-//         address: formData.get('address'),
-//         order_type: formData.get('order_type'),
-//         description: formData.get('description'),
-//         confirm: formData.get('confirm'),
-//       });
-
-//       const response = await AxiosInstance.post(
-//         '/edit_upcoming_order_api',
-//         formData,
-//       );
-
-//       console.log('API Response:', response.data);
-
-//       if (response.data.status) {
-//         return response.data;
-//       } else {
-//         const errorMessage = response.data.message || 'Failed to update order';
-//         console.log('Error Message:', errorMessage);
-//         if (response.data.errors) {
-//           console.log('Validation Errors:', response.data.errors);
-//         }
-//         return rejectWithValue(errorMessage);
-//       }
-//     } catch (error) {
-//       console.error('Edit order error:', {
-//         message: error.message,
-//         response: error.response?.data,
-//         status: error.response?.status,
-//         headers: error.response?.headers,
-//       });
-//       const errorMessage =
-//         error.response?.data?.message || 'Failed to update order';
-//       if (error.response?.data?.errors) {
-//         console.log('Validation Errors:', error.response.data.errors);
-//       }
-//       return rejectWithValue(errorMessage);
-//     }
-//   },
-// );
-
-export const fetchOrderDetails = createAsyncThunk(
-  'order/fetchOrderDetails',
-  async (id, {rejectWithValue}) => {
-    try {
-      const formData = new FormData();
-      formData.append('id', id.toString());
-
-      const response = await AxiosInstance.post(
-        '/get_order_details_api',
-        formData,
-      );
-
-      if (response.data.status) {
-        return response.data;
-      } else {
-        return rejectWithValue(
-          response.data.message || 'Failed to fetch order details',
-        );
-      }
-    } catch (error) {
-      console.error(
-        'Fetch order details error:',
-        error.response?.data || error.message,
-      );
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch order details',
-      );
-    }
-  },
-);
-
 const initialState = {
   loading: false,
   success: false,
@@ -280,20 +172,20 @@ const orderSlice = createSlice({
     //   });
 
     // Fetch Order Details
-    builder
-      .addCase(fetchOrderDetails.pending, state => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchOrderDetails.fulfilled, (state, action) => {
-        state.loading = false;
-        state.orderDetails = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchOrderDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+    // builder
+    //   .addCase(fetchOrderDetails.pending, state => {
+    //     state.loading = true;
+    //     state.error = null;
+    //   })
+    //   .addCase(fetchOrderDetails.fulfilled, (state, action) => {
+    //     state.loading = false;
+    //     state.orderDetails = action.payload;
+    //     state.error = null;
+    //   })
+    //   .addCase(fetchOrderDetails.rejected, (state, action) => {
+    //     state.loading = false;
+    //     state.error = action.payload;
+    //   });
   },
 });
 

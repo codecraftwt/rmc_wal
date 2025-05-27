@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {h, w, f} from 'walstar-rn-responsive';
@@ -15,87 +16,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import {useDispatch, useSelector} from 'react-redux';
-import {fetchUpcomingOrders} from '../../../Redux/slices/orderSlice';
+import {fetchUpcomingOrders, deleteUpcomingOrder} from '../../../Redux/slices/orderSlice';
 
-const initialOrders = [
-  {
-    id: '1',
-    customer_details: 'Robert Smith',
-    productGrade: 'A-1 Premium',
-    quantity: '1500 kg',
-    date: '2023-06-15',
-    onsiteTime: '09:00 AM',
-    address: '123 Industrial Area, Mumbai',
-    type: 'Pumping/Dumping',
-    description: 'Urgent order for construction project',
-    status: 'confirmed',
-  },
-  // {
-  //   id: '1',
-  //   quantity: '1500 kg',
-  //   order_date: '2023-06-15',
-  //   on_site_time: '09:00 AM',
-  //   address: '123 Industrial Area, Mumbai',
-  //   order_type: 'Pumping/Dumping',
-  //   description: 'Urgent order for construction project',
-  //   confirm: "0",
-  //   customer_details: 'Robert Smith',
-  //   product_name: 'A-1 Premium',
-  //   company: "Maruti Bhandigre"
-  ////   status: 'confirmed',
-  // },
-
-  // "id": "8",
-  //           "customer_id": "4",
-  //           "product_grade_id": "8",
-  //           "quantity": "6.00",
-  //           "order_date": "2025-04-30",
-  //           "on_site_time": "15:35:00",
-  //           "address": "Kolhapur",
-  //           "order_type": "1",
-  //           "description": "api test data",
-  //           "confirm": "0",
-  //           "created_at": "2025-05-26 16:47:14",
-  //           "material_id": "8",
-  //           "product_name": "M-25 PPC",
-  //           "company": "Maruti Bhandigre"
-  {
-    id: '2',
-    customer_details: 'Rubby',
-    productGrade: 'M-10',
-    quantity: '1000 kg',
-    date: '2023-06-20',
-    onsiteTime: '09:00 AM',
-    address: 'Navi Mumbai',
-    type: 'Pumping/Dumping',
-    description: 'construction project',
-    status: 'confirmed',
-  },
-  {
-    id: '3',
-    customer_details: 'User',
-    productGrade: 'M-20',
-    quantity: '1000 kg',
-    date: '2023-05-15',
-    onsiteTime: '09:00 AM',
-    address: 'Navi Mumbai',
-    type: 'Pumping/Dumping',
-    description: 'construction project',
-    status: 'pending',
-  },
-  {
-    id: '4',
-    customer_details: 'Sam',
-    productGrade: 'M-12',
-    quantity: '1000 kg',
-    date: '2023-08-15',
-    onsiteTime: '09:00 AM',
-    address: 'Navi Mumbai',
-    type: 'Pumping/Dumping',
-    description: 'construction project',
-    status: 'confirmed',
-  },
-];
 
 const OrderCard = ({order, navigation, onDelete}) => {
   return (
@@ -188,14 +110,14 @@ const UpcomingOrders = ({navigation, route}) => {
   const [showAll, setShowAll] = useState(false);
 
   const dispatch = useDispatch();
-  const {upcomingOrders, loading, error} = useSelector(state => {
+  const {upcomingOrders, loading, error, deleteLoading, deleteSuccess, deleteError} = useSelector(state => {
     console.log('Redux State in selector:', {
-      loading: state.order.loading,
-      error: state.order.error,
-      hasOrders: !!state.order.upcomingOrders,
-      ordersData: state.order.upcomingOrders
+      loading: state.orders.loading,
+      error: state.orders.error,
+      hasOrders: !!state.orders.upcomingOrders,
+      ordersData: state.orders.upcomingOrders
     });
-    return state.order;
+    return state.orders;
   });
 
   useEffect(() => {
@@ -236,7 +158,7 @@ const UpcomingOrders = ({navigation, route}) => {
       date: order.order_date || 'No date',
       onsiteTime: order.on_site_time || 'No time',
       address: order.address || 'No address',
-      type: order.order_type === '1' ? 'Pumping/Dumping' : 'Delivery',
+      type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
       status: order.confirm === '1' ? 'confirmed' : 'pending',
     };
@@ -281,8 +203,19 @@ const UpcomingOrders = ({navigation, route}) => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () =>
-            console.log(`Delete logic for order id ${id} goes here.`),
+          onPress: async () => {
+            try {
+              const resultAction = await dispatch(deleteUpcomingOrder(id));
+              if (deleteUpcomingOrder.fulfilled.match(resultAction)) {
+                dispatch(fetchUpcomingOrders());
+                Alert.alert('Success', 'Order deleted successfully');
+              } else if (deleteUpcomingOrder.rejected.match(resultAction)) {
+                Alert.alert('Error', 'Failed to delete order. Please try again.');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'An unexpected error occurred');
+            }
+          },
         },
       ],
     );
@@ -292,13 +225,13 @@ const UpcomingOrders = ({navigation, route}) => {
     // console.log('Rendering loading state');
     return (
       <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F7374F" />
         <Text>Loading orders...</Text>
       </View>
     );
   }
 
   if (error) {
-    // console.log('Rendering error state:', error);
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error loading orders: {error}</Text>
@@ -306,7 +239,6 @@ const UpcomingOrders = ({navigation, route}) => {
     );
   }
 
-  // Debug log for final render
   console.log('Rendering main view with orders:', {
     hasOrders: !!upcomingOrders,
     ordersData: upcomingOrders,
