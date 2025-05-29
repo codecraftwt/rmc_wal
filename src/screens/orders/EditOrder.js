@@ -15,12 +15,22 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import {useDispatch, useSelector} from 'react-redux';
-import {editUpcomingOrder, fetchProductGrades} from '../../../Redux/slices/orderSlice';
+import {
+  editUpcomingOrder,
+  fetchProductGrades,
+} from '../../../Redux/slices/orderSlice';
 import {Picker} from '@react-native-picker/picker';
+import DatePicker from 'react-native-date-picker';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const EditOrder = ({route, navigation}) => {
   const dispatch = useDispatch();
   const {order} = route.params;
+
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(new Date());
 
   const {productGrades, productGradesLoading} = useSelector(
     state => state.order,
@@ -30,14 +40,19 @@ const EditOrder = ({route, navigation}) => {
   const [formData, setFormData] = useState({
     customer_id: order.company || '',
     customer_details: order.customer_details || '',
-    product_grade_id: order.product_name || order.productGrade || '',
+    // product_grade_id: order.product_name || order.productGrade || '',
+    product_grade_id: order.productGrade || '',
     quantity: order.quantity?.replace('.00 kg', '') || '',
     order_date: order.order_date || order.date || '',
-    on_site_time: order.on_site_time?.replace(':00', '') || order.onsiteTime?.replace(':00', '') || '',
+    on_site_time:
+      order.on_site_time?.replace(':00', '') ||
+      order.onsiteTime?.replace(':00', '') ||
+      '',
     address: order.address || '',
-    order_type: order.order_type || (order.type === 'Pumping/Dumping' ? '1' : '2') || '',
+    order_type:
+      order.order_type || (order.type === 'Pumping' ? '1' : '2') || '',
     description: order.description || '',
-    confirm: order.confirm === 1 ? '1' : '0'
+    confirm: order.confirm === 1 ? '1' : '0',
   });
 
   useEffect(() => {
@@ -58,8 +73,15 @@ const EditOrder = ({route, navigation}) => {
 
   const handleUpdate = async () => {
     try {
-      if (!formData.customer_details || !formData.product_grade_id || !formData.quantity || 
-          !formData.order_date || !formData.on_site_time || !formData.address || !formData.order_type) {
+      if (
+        !formData.customer_details ||
+        !formData.product_grade_id ||
+        !formData.quantity ||
+        !formData.order_date ||
+        !formData.on_site_time ||
+        !formData.address ||
+        !formData.order_type
+      ) {
         Alert.alert('Error', 'Please fill in all required fields');
         return;
       }
@@ -73,13 +95,13 @@ const EditOrder = ({route, navigation}) => {
         order_type: formData.order_type?.toString(),
         customer_id: formData.customer_id?.toString(),
         product_grade_id: formData.product_grade_id?.toString(),
-        confirm: formData.confirm
+        confirm: formData.confirm,
       };
-    
+
       const resultAction = await dispatch(
-        editUpcomingOrder({id: order.id, orderData: formattedData})
+        editUpcomingOrder({id: order.id, orderData: formattedData}),
       );
-      
+
       if (editUpcomingOrder.fulfilled.match(resultAction)) {
         Alert.alert(
           'Success',
@@ -90,7 +112,7 @@ const EditOrder = ({route, navigation}) => {
               onPress: () => navigation.navigate('UpcomingOrders'),
             },
           ],
-          { cancelable: false }
+          {cancelable: false},
         );
       } else {
         const errorMessage = resultAction.payload;
@@ -102,6 +124,24 @@ const EditOrder = ({route, navigation}) => {
   };
   const handleChange = (field, value) => {
     setFormData({...formData, [field]: value});
+  };
+
+  const handleDateConfirm = date => {
+    setDatePickerOpen(false);
+    setSelectedDate(date);
+    const formattedDate = date.toISOString().split('T')[0];
+    handleChange('order_date', formattedDate);
+  };
+
+  const handleTimeConfirm = time => {
+    setTimePickerOpen(false);
+    setSelectedTime(time);
+    const formattedTime = time.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    handleChange('on_site_time', formattedTime);
   };
   return (
     <>
@@ -138,18 +178,22 @@ const EditOrder = ({route, navigation}) => {
                 ) : (
                   <Picker
                     selectedValue={formData.product_grade_id}
-                    onValueChange={value => handleChange('product_grade_id', value)}
+                    onValueChange={value =>
+                      handleChange('product_grade_id', value)
+                    }
                     style={styles.picker}
-                    dropdownIconColor="#F7374F"
-                  >
-                    <Picker.Item label="Select a product grade" value="" />
-                    {Array.isArray(productGrades) && productGrades.map((item) => (
-                      <Picker.Item
-                        key={item?.id || item?.name}
-                        label={item?.name || 'Unknown'}
-                        value={item?.id || ''}
-                      />
-                    ))}
+                    dropdownIconColor="#F7374F">
+                    {/* <Picker.Item label="Select a product grade" value="" /> */}
+                    <Picker.Item label={formData.product_grade_id || 'Select a product grade' } value=""/>
+
+                    {Array.isArray(productGrades) &&
+                      productGrades.map(item => (
+                        <Picker.Item
+                          key={item?.id || item?.name}
+                          label={item?.name || 'Unknown'}
+                          value={item?.id || ''}
+                        />
+                      ))}
                   </Picker>
                 )}
               </View>
@@ -166,28 +210,57 @@ const EditOrder = ({route, navigation}) => {
             <View style={styles.row}>
               <View style={[styles.inputGroup, {flex: 1, marginRight: w(2)}]}>
                 <Text style={styles.label}>Date</Text>
-                <TextInput
+                {/* <TextInput
                   style={styles.input}
-                 value={formData.order_date}
+                  value={formData.order_date}
                   onChangeText={text => handleChange('order_date', text)}
                   placeholder="YYYY-MM-DD"
-                />
+                /> */}
+                <TouchableOpacity onPress={() => setDatePickerOpen(true)} style={styles.dateInput}>
+                  <Text style={[styles.dateInputText, !formData.order_date && { color: '#999' }]}>
+                    {formData.order_date || 'Select a date'}
+                  </Text>
+                  <Icon name="calendar" size={f(2.5)} color="#F7374F" />
+                </TouchableOpacity>
               </View>
               <View style={[styles.inputGroup, {flex: 1}]}>
                 <Text style={styles.label}>Time</Text>
-                <TextInput
+                {/* <TextInput
                   style={styles.input}
-                 value={formData.on_site_time}
+                  value={formData.on_site_time}
                   onChangeText={text => handleChange('on_site_time', text)}
                   placeholder="HH:MM AM/PM"
-                />
+                /> */}
+                <TouchableOpacity onPress={() => setTimePickerOpen(true)} style={styles.dateInput}>
+                  <Text style={[styles.dateInputText, !formData.on_site_time && { color: '#999' }]}>
+                    {formData.on_site_time || 'Select time'}
+                  </Text>
+                  <Icon name="time" size={f(2.5)} color="#F7374F" />
+                </TouchableOpacity>
               </View>
             </View>
+            <DatePicker
+              modal
+              open={datePickerOpen}
+              date={selectedDate}
+              onConfirm={handleDateConfirm}
+              onCancel={() => setDatePickerOpen(false)}
+              mode="date"
+              minimumDate={new Date()}
+            />
+            <DatePicker
+              modal
+              open={timePickerOpen}
+              date={selectedTime}
+              onConfirm={handleTimeConfirm}
+              onCancel={() => setTimePickerOpen(false)}
+              mode="time"
+            />
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Address</Text>
               <TextInput
                 style={[styles.input, {height: h(8)}]}
-                 value={formData.address}
+                value={formData.address}
                 onChangeText={text => handleChange('address', text)}
                 multiline
               />
@@ -204,7 +277,8 @@ const EditOrder = ({route, navigation}) => {
                   <Text
                     style={[
                       styles.statusButtonText,
-                      formData.order_type === '1' && styles.statusButtonTextActive,
+                      formData.order_type === '1' &&
+                        styles.statusButtonTextActive,
                     ]}>
                     Pumping
                   </Text>
@@ -218,14 +292,15 @@ const EditOrder = ({route, navigation}) => {
                   <Text
                     style={[
                       styles.statusButtonText,
-                      formData.order_type === '2' && styles.statusButtonTextActive,
+                      formData.order_type === '2' &&
+                        styles.statusButtonTextActive,
                     ]}>
                     Dumping
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-              <View style={styles.inputGroup}>
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Description</Text>
               <TextInput
                 style={[styles.input, {height: h(8)}]}
@@ -234,7 +309,7 @@ const EditOrder = ({route, navigation}) => {
                 multiline
               />
             </View>
-             <View style={styles.inputGroup}>
+            <View style={styles.inputGroup}>
               <Text style={styles.label}>Status</Text>
               <View style={styles.statusOptions}>
                 <TouchableOpacity
@@ -272,8 +347,7 @@ const EditOrder = ({route, navigation}) => {
               style={styles.updateButton}
               start={{x: 0, y: 0}}
               end={{x: 1, y: 0}}>
-              <TouchableOpacity
-                onPress={handleUpdate}>
+              <TouchableOpacity onPress={handleUpdate}>
                 <Text style={styles.updateButtonText}>Update Order</Text>
               </TouchableOpacity>
             </LinearGradient>
@@ -383,6 +457,21 @@ const styles = StyleSheet.create({
     height: h(6),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  dateInput: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    padding: w(3),
+    fontSize: f(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateInputText: {
+    fontSize: f(2),
+    color: '#333',
   },
 });
 export default EditOrder;

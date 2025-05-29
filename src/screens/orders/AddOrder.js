@@ -108,6 +108,11 @@ const AddOrder = ({navigation}) => {
   const handleSubmit = () => {
     dispatch(addUpcomingOrder(formData));
   };
+
+  const orderTypes = [
+  { label: 'Pumping', value: '1' },
+  { label: 'Dumping', value: '2' },
+];
   return (
     <>
       <LinearGradient
@@ -236,13 +241,41 @@ const AddOrder = ({navigation}) => {
             multiline
             required
           />
-          <FormField
+          {/* <FormField
             icon="pricetag-outline"
             label="Type"
             value={formData.order_type}
             onChangeText={text => handleChange('order_type', text)}
             placeholder="Pumping/Dumping etc."
-          />
+          /> */}
+
+<View style={{ marginBottom: 20 }}>
+  <Text style={{ fontSize: 16, marginBottom: 8 }}>Type</Text>
+  <View
+    style={{
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 5,
+      overflow: 'hidden',
+      backgroundColor: '#ffffff',
+    }}
+  >
+    <Picker
+      selectedValue={formData.order_type}
+      onValueChange={(itemValue) =>
+        setFormData((prev) => ({ ...prev, order_type: itemValue }))
+      }
+      mode="dropdown"
+      style={{ height: 55 }}
+    >
+      <Picker.Item label="Select Type" value="" />
+      <Picker.Item label="Pumping" value="Pumping" />
+      <Picker.Item label="Dumping" value="Dumping" />
+    </Picker>
+  </View>
+</View>
+
+
           <FormField
             icon="document-text-outline"
             label="Description"

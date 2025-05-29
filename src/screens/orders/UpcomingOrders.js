@@ -64,7 +64,8 @@ const OrderCard = ({order, navigation, onDelete}) => {
             <Icon name="calendar-outline" size={f(2.2)} color="#4A90E2" />
           </View>
           <Text style={styles.detailText}>
-            {order.date} • {order.onsiteTime}
+            {/* {order.date} • {order.onsiteTime} */}
+            {order.date} • {convertTo12Hour(order.onsiteTime)}
           </Text>
         </View>
 
@@ -120,19 +121,26 @@ const UpcomingOrders = ({navigation, route}) => {
     return state.order;
   });
 
+  const deleteLoading = useSelector(state => state.order.deleteLoading);
+
   useFocusEffect(
     useCallback(() => {
       dispatch(fetchUpcomingOrders());
     }, [dispatch]),
   );
 
+  // useEffect(() => {
+  //   console.log('State changed:', {
+  //     loading,
+  //     error,
+  //     hasOrders: !!upcomingOrders,
+  //     ordersData: upcomingOrders,
+  //   });
+  // }, [upcomingOrders, loading, error]);
   useEffect(() => {
-    console.log('State changed:', {
-      loading,
-      error,
-      hasOrders: !!upcomingOrders,
-      ordersData: upcomingOrders,
-    });
+    if (upcomingOrders && !loading && !error) {
+      setShowAll(false);
+    }
   }, [upcomingOrders, loading, error]);
 
   useEffect(() => {
@@ -157,7 +165,7 @@ const UpcomingOrders = ({navigation, route}) => {
       date: order.order_date || 'No date',
       onsiteTime: order.on_site_time || 'No time',
       address: order.address || 'No address',
-      type: order.order_type === '1' ? 'Pumping/Dumping' : 'Delivery',
+      type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
       status: order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
       confirm: order.confirm // Keep the original confirm value
@@ -187,7 +195,7 @@ const UpcomingOrders = ({navigation, route}) => {
 
   const displayOrders = showAll
     ? filteredOrders
-    : filteredOrders.slice(-3).reverse();
+    : filteredOrders.slice(0,3);
 
   const shouldShowToggle = filteredOrders.length > 3;
 
@@ -244,6 +252,15 @@ const UpcomingOrders = ({navigation, route}) => {
     displayOrdersLength: displayOrders.length,
   });
 
+  function convertTo12Hour(time24) {
+    const [hourStr, minute] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
+  }
+
   return (
     <>
       <LinearGradient
@@ -277,7 +294,7 @@ const UpcomingOrders = ({navigation, route}) => {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by customer, material, or address"
+            placeholder="Search by company, material, or address"
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -333,6 +350,11 @@ const UpcomingOrders = ({navigation, route}) => {
             </View>
           }
         />
+        {deleteLoading && (
+          <View style={styles.loaderOverlay}>
+            <ActivityIndicator size="large" color="#F7374F" />
+          </View>
+        )}
       </LinearGradient>
     </>
   );
@@ -549,6 +571,13 @@ const styles = StyleSheet.create({
     color: '#F7374F',
     fontSize: f(2),
     textAlign: 'center',
+  },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
   },
 });
 export default UpcomingOrders;
