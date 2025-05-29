@@ -12,6 +12,7 @@ const Header = ({
   rightIcon,
   onRightIconPress,
   gradientColors = ['#F7374F', '#FF6B6B'],
+   onBackPress,
 }) => {
   return (
     <LinearGradient
@@ -22,7 +23,8 @@ const Header = ({
       <View style={styles.headerContent}>
         {showBackButton && (
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            // onPress={() => navigation.goBack()}
+            onPress={() => (onBackPress ? onBackPress() : navigation.goBack())}
             style={styles.backButton}>
             <Icon name="arrow-back" size={f(3.5)} color="white" />
           </TouchableOpacity>

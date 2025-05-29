@@ -8,6 +8,7 @@ import {
   Alert,
   TextInput,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {h, w, f} from 'walstar-rn-responsive';
@@ -221,6 +222,7 @@ const UpcomingOrders = ({navigation, route}) => {
     // console.log('Rendering loading state');
     return (
       <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF6B6B" />
         <Text>Loading orders...</Text>
       </View>
     );
@@ -262,6 +264,7 @@ const UpcomingOrders = ({navigation, route}) => {
           showBackButton="arrow-back"
           navigation={navigation}
           rightIcon="add"
+          onBackPress={() => navigation.navigate('MainTabs')} 
           onRightIconPress={() => navigation.navigate('AddOrder')}
         />
 

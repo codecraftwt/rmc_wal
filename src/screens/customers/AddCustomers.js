@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState,useEffect} from 'react';
 import {
   Text,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
   Alert,
+  BackHandler
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -35,14 +36,24 @@ const AddCustomers = ({navigation}) => {
     }
 
     setLoading(true);
-
-    // Simulate API call
     setTimeout(() => {
       setLoading(false);
       Alert.alert('Success', 'Customer added successfully!');
       navigation.goBack();
     }, 1500);
   };
+
+ useEffect(() => {
+     const backAction = () => {
+       navigation.navigate('MainTabs');
+       return true;
+     };
+     const backHandler = BackHandler.addEventListener(
+       'hardwareBackPress',
+       backAction,
+     );
+     return () => backHandler.remove();
+   }, [navigation]);
 
   return (
     <>
@@ -236,7 +247,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   statusBarArea: {
-    height: h(5),
+     height: h(2),
   },
   statusBarAreaInner: {
     flex: 1,
