@@ -42,11 +42,11 @@ const HomeScreen = ({navigation}) => {
     },
     {
       id: 4,
-      title: 'Reports',
-      content: 'Generate reports and View all stock reports',
+      title: 'Customers',
+      content: 'Add, Manage and View all customers',
       icon: 'bar-chart-outline',
       colors: ['#83D78F', '#6BCB77'],
-      // navigateTo: 'ReportsScreen',
+      navigateTo: 'AddCustomers',
     },
   ];
   

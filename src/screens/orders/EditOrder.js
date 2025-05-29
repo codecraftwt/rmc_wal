@@ -8,49 +8,101 @@ import {
   ScrollView,
   Alert,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import {h, w, f} from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
+import {useDispatch, useSelector} from 'react-redux';
+import {editUpcomingOrder, fetchProductGrades} from '../../../Redux/slices/orderSlice';
+import {Picker} from '@react-native-picker/picker';
 
 const EditOrder = ({route, navigation}) => {
+  const dispatch = useDispatch();
   const {order} = route.params;
+
+  const {productGrades, productGradesLoading} = useSelector(
+    state => state.order,
+  );
+
+  // Initialize form data with the order details
   const [formData, setFormData] = useState({
-    customer_details: order.customer_details,
-    productGrade: order.productGrade,
-    quantity: order.quantity,
-    date: order.date,
-    onsiteTime: order.onsiteTime,
-    address: order.address,
-    type: order.type,
-    description: order.description,
-    status: order.status,
+    customer_id: order.company || '',
+    customer_details: order.customer_details || '',
+    product_grade_id: order.product_name || order.productGrade || '',
+    quantity: order.quantity?.replace('.00 kg', '') || '',
+    order_date: order.order_date || order.date || '',
+    on_site_time: order.on_site_time?.replace(':00', '') || order.onsiteTime?.replace(':00', '') || '',
+    address: order.address || '',
+    order_type: order.order_type || (order.type === 'Pumping/Dumping' ? '1' : '2') || '',
+    description: order.description || '',
+    confirm: order.confirm === 1 ? '1' : '0'
   });
+
+  useEffect(() => {
+    dispatch(fetchProductGrades());
+  }, [dispatch]);
 
   useEffect(() => {
     const backAction = () => {
       navigation.goBack();
       return true;
     };
-
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
       backAction,
     );
-
     return () => backHandler.remove();
   }, [navigation]);
 
-  const handleUpdate = () => {
-    Alert.alert('Success', 'Order updated successfully!');
-    navigation.goBack();
+  const handleUpdate = async () => {
+    try {
+      if (!formData.customer_details || !formData.product_grade_id || !formData.quantity || 
+          !formData.order_date || !formData.on_site_time || !formData.address || !formData.order_type) {
+        Alert.alert('Error', 'Please fill in all required fields');
+        return;
+      }
+      const formattedData = {
+        ...formData,
+        customer_details: formData.customer_details?.trim(),
+        quantity: formData.quantity?.toString().replace(/[^0-9.]/g, ''),
+        order_date: formData.order_date?.trim(),
+        on_site_time: formData.on_site_time?.trim(),
+        address: formData.address?.trim(),
+        order_type: formData.order_type?.toString(),
+        customer_id: formData.customer_id?.toString(),
+        product_grade_id: formData.product_grade_id?.toString(),
+        confirm: formData.confirm
+      };
+    
+      const resultAction = await dispatch(
+        editUpcomingOrder({id: order.id, orderData: formattedData})
+      );
+      
+      if (editUpcomingOrder.fulfilled.match(resultAction)) {
+        Alert.alert(
+          'Success',
+          'Order updated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('UpcomingOrders'),
+            },
+          ],
+          { cancelable: false }
+        );
+      } else {
+        const errorMessage = resultAction.payload;
+        Alert.alert('Error', errorMessage);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred');
+    }
   };
-
   const handleChange = (field, value) => {
     setFormData({...formData, [field]: value});
   };
-
   return (
     <>
       <LinearGradient
@@ -60,7 +112,6 @@ const EditOrder = ({route, navigation}) => {
         end={{x: 1, y: 0}}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
-
       <View style={styles.container}>
         <Header
           title="Edit Order"
@@ -70,23 +121,39 @@ const EditOrder = ({route, navigation}) => {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.card}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Customer Name</Text>
+              <Text style={styles.label}>Company Name</Text>
               <TextInput
                 style={styles.input}
                 value={formData.customer_details}
                 onChangeText={text => handleChange('customer_details', text)}
               />
             </View>
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Product Grade</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.productGrade}
-                onChangeText={text => handleChange('productGrade', text)}
-              />
+              <View style={styles.pickerContainer}>
+                {productGradesLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#F7374F" />
+                  </View>
+                ) : (
+                  <Picker
+                    selectedValue={formData.product_grade_id}
+                    onValueChange={value => handleChange('product_grade_id', value)}
+                    style={styles.picker}
+                    dropdownIconColor="#F7374F"
+                  >
+                    <Picker.Item label="Select a product grade" value="" />
+                    {Array.isArray(productGrades) && productGrades.map((item) => (
+                      <Picker.Item
+                        key={item?.id || item?.name}
+                        label={item?.name || 'Unknown'}
+                        value={item?.id || ''}
+                      />
+                    ))}
+                  </Picker>
+                )}
+              </View>
             </View>
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Quantity</Text>
               <TextInput
@@ -96,14 +163,13 @@ const EditOrder = ({route, navigation}) => {
                 keyboardType="numeric"
               />
             </View>
-
             <View style={styles.row}>
               <View style={[styles.inputGroup, {flex: 1, marginRight: w(2)}]}>
                 <Text style={styles.label}>Date</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.date}
-                  onChangeText={text => handleChange('date', text)}
+                 value={formData.order_date}
+                  onChangeText={text => handleChange('order_date', text)}
                   placeholder="YYYY-MM-DD"
                 />
               </View>
@@ -111,57 +177,76 @@ const EditOrder = ({route, navigation}) => {
                 <Text style={styles.label}>Time</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.onsiteTime}
-                  onChangeText={text => handleChange('onsiteTime', text)}
+                 value={formData.on_site_time}
+                  onChangeText={text => handleChange('on_site_time', text)}
                   placeholder="HH:MM AM/PM"
                 />
               </View>
             </View>
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Address</Text>
               <TextInput
                 style={[styles.input, {height: h(8)}]}
-                value={formData.address}
+                 value={formData.address}
                 onChangeText={text => handleChange('address', text)}
                 multiline
               />
             </View>
-
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Delivery Type</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.type}
-                onChangeText={text => handleChange('type', text)}
-              />
+              <Text style={styles.label}>Order Type</Text>
+              <View style={styles.statusOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    formData.order_type === '1' && styles.statusButtonActive,
+                  ]}
+                  onPress={() => handleChange('order_type', '1')}>
+                  <Text
+                    style={[
+                      styles.statusButtonText,
+                      formData.order_type === '1' && styles.statusButtonTextActive,
+                    ]}>
+                    Pumping
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.statusButton,
+                    formData.order_type === '2' && styles.statusButtonActive,
+                  ]}
+                  onPress={() => handleChange('order_type', '2')}>
+                  <Text
+                    style={[
+                      styles.statusButtonText,
+                      formData.order_type === '2' && styles.statusButtonTextActive,
+                    ]}>
+                    Dumping
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-
-            <View style={styles.inputGroup}>
+              <View style={styles.inputGroup}>
               <Text style={styles.label}>Description</Text>
               <TextInput
                 style={[styles.input, {height: h(8)}]}
-                value={formData.description}
+                value={formData.description || ''}
                 onChangeText={text => handleChange('description', text)}
                 multiline
               />
             </View>
-
-            <View style={styles.inputGroup}>
+             <View style={styles.inputGroup}>
               <Text style={styles.label}>Status</Text>
               <View style={styles.statusOptions}>
                 <TouchableOpacity
                   style={[
                     styles.statusButton,
-                    formData.status === 'confirmed' &&
-                      styles.statusButtonActive,
+                    formData.confirm === '1' && styles.statusButtonActive,
                   ]}
-                  onPress={() => handleChange('status', 'confirmed')}>
+                  onPress={() => handleChange('confirm', '1')}>
                   <Text
                     style={[
                       styles.statusButtonText,
-                      formData.status === 'confirmed' &&
-                        styles.statusButtonTextActive,
+                      formData.confirm === '1' && styles.statusButtonTextActive,
                     ]}>
                     Confirmed
                   </Text>
@@ -169,28 +254,25 @@ const EditOrder = ({route, navigation}) => {
                 <TouchableOpacity
                   style={[
                     styles.statusButton,
-                    formData.status === 'pending' && styles.statusButtonActive,
+                    formData.confirm === '0' && styles.statusButtonActive,
                   ]}
-                  onPress={() => handleChange('status', 'pending')}>
+                  onPress={() => handleChange('confirm', '0')}>
                   <Text
                     style={[
                       styles.statusButtonText,
-                      formData.status === 'pending' &&
-                        styles.statusButtonTextActive,
+                      formData.confirm === '0' && styles.statusButtonTextActive,
                     ]}>
                     Pending
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
-
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
               style={styles.updateButton}
               start={{x: 0, y: 0}}
               end={{x: 1, y: 0}}>
               <TouchableOpacity
-                // style={styles.updateButton}
                 onPress={handleUpdate}>
                 <Text style={styles.updateButtonText}>Update Order</Text>
               </TouchableOpacity>
@@ -201,7 +283,6 @@ const EditOrder = ({route, navigation}) => {
     </>
   );
 };
-
 const styles = StyleSheet.create({
   statusBarArea: {
     height: h(2),
@@ -286,6 +367,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
+  pickerContainer: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: h(6),
+    width: '100%',
+    color: '#333',
+  },
+  loadingContainer: {
+    height: h(6),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
-
 export default EditOrder;

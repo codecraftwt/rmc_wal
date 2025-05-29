@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -16,16 +16,21 @@ import { h, w, f } from 'walstar-rn-responsive';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import DatePicker from 'react-native-date-picker';
-import { useDispatch, useSelector } from 'react-redux';
-import { addUpcomingOrder, resetAddOrderState } from '../../../Redux/slices/addOrderSlice';
-// import { addUpcomingOrder, resetAddOrderState } from '../';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  addUpcomingOrder,
+  resetAddOrderState,
+  fetchProductGrades,
+} from '../../../Redux/slices/addOrderSlice';
+import {Picker} from '@react-native-picker/picker';
 
-const AddOrder = ({ navigation }) => {
+const AddOrder = ({navigation}) => {
   const dispatch = useDispatch();
 
-  const { loading, success, error } = useSelector(state => state.order);
-  console.log("Addorder ---->", { loading, success, error });
-
+  const {loading, success, error} = useSelector(state => state.addOrder);
+  const {productGrades, productGradesLoading} = useSelector(
+    state => state.order,
+  );
 
   const [formData, setFormData] = useState({
     customer_name: '',
@@ -50,7 +55,10 @@ const AddOrder = ({ navigation }) => {
       return true;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
     return () => backHandler.remove();
   }, [navigation]);
 
@@ -97,21 +105,9 @@ const AddOrder = ({ navigation }) => {
     handleChange('on_site_time', formattedTime);
   };
 
-const handleSubmit = () => {
-  // if (!formData.customer_details || !formData.date || !formData.address || !formData.productGrade || !formData.quantity || !formData.onsiteTime) {
-  //   Alert.alert('Error', 'Please fill in all required fields');
-  //   return;
-  // }
-
-  // const payload = {
-  //   ...formData,
-  //   confirm: 1,
-  // };
-
-  // console.log("Order payload --->", payload);
-
-  dispatch(addUpcomingOrder(payload));
-};
+  const handleSubmit = () => {
+    dispatch(addUpcomingOrder(formData));
+  };
   return (
     <>
       <LinearGradient
@@ -125,9 +121,13 @@ const handleSubmit = () => {
       <LinearGradient
         colors={['#F8FAFF', '#F0F4FF']}
         style={styles.container}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}>
-        <Header title="Add New Order" navigation={navigation} showBackButton="arrow-back" />
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}>
+        <Header
+          title="Add New Order"
+          navigation={navigation}
+          showBackButton="arrow-back"
+        />
 
         <ScrollView contentContainerStyle={styles.formContainer}>
           <FormField
@@ -143,6 +143,9 @@ const handleSubmit = () => {
             value={formData.product_grade}
             onChangeText={text => handleChange('product_grade', text)}
             required
+            isDropdown={true}
+            dropdownItems={productGrades || []}
+            loading={productGradesLoading}
           />
           <FormField
             icon="scale-outline"
@@ -157,11 +160,24 @@ const handleSubmit = () => {
           {/* Date Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldLabel}>
-              <Icon name="calendar-outline" size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
-              <Text style={styles.labelText}>Date<Text style={styles.required}> *</Text></Text>
+              <Icon
+                name="calendar-outline"
+                size={f(2.5)}
+                color="#F7374F"
+                style={styles.fieldIcon}
+              />
+              <Text style={styles.labelText}>
+                Date<Text style={styles.required}> *</Text>
+              </Text>
             </View>
-            <TouchableOpacity onPress={() => setDatePickerOpen(true)} style={styles.dateInput}>
-              <Text style={[styles.dateInputText, !formData.date && { color: '#999' }]}>
+            <TouchableOpacity
+              onPress={() => setDatePickerOpen(true)}
+              style={styles.dateInput}>
+              <Text
+                style={[
+                  styles.dateInputText,
+                  !formData.date && {color: '#999'},
+                ]}>
                 {formData.date || 'Select a date'}
               </Text>
               <Icon name="calendar" size={f(2.5)} color="#888" />
@@ -180,11 +196,24 @@ const handleSubmit = () => {
           {/* Time Field */}
           <View style={styles.fieldContainer}>
             <View style={styles.fieldLabel}>
-              <Icon name="time-outline" size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
-              <Text style={styles.labelText}>Onsite Time<Text style={styles.required}> *</Text></Text>
+              <Icon
+                name="time-outline"
+                size={f(2.5)}
+                color="#F7374F"
+                style={styles.fieldIcon}
+              />
+              <Text style={styles.labelText}>
+                Onsite Time<Text style={styles.required}> *</Text>
+              </Text>
             </View>
-            <TouchableOpacity onPress={() => setTimePickerOpen(true)} style={styles.dateInput}>
-              <Text style={[styles.dateInputText, !formData.on_site_time && { color: '#999' }]}>
+            <TouchableOpacity
+              onPress={() => setTimePickerOpen(true)}
+              style={styles.dateInput}>
+              <Text
+                style={[
+                  styles.dateInputText,
+                  !formData.on_site_time && {color: '#999'},
+                ]}>
                 {formData.on_site_time || 'Select time'}
               </Text>
               <Icon name="time" size={f(2.5)} color="#888" />
@@ -252,6 +281,9 @@ const FormField = ({
   onChangeText,
   required = false,
   unit = null,
+  isDropdown = false,
+  dropdownItems = [],
+  loading = false,
   ...props
 }) => (
   <View style={styles.fieldContainer}>
@@ -263,18 +295,62 @@ const FormField = ({
       </Text>
     </View>
     <View style={styles.inputContainer}>
-      {unit && <Text style={styles.unitText}>{unit}</Text>}
-      <TextInput
-        style={[styles.input, unit && { paddingLeft: w(8) }]}
-        value={value}
-        onChangeText={onChangeText}
-        {...props}
-      />
+      {isDropdown ? (
+        <View style={styles.pickerContainer}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#F7374F" />
+            </View>
+          ) : (
+            <Picker
+              selectedValue={value}
+              onValueChange={onChangeText}
+              style={styles.picker}
+              dropdownIconColor="#F7374F"
+            >
+              <Picker.Item label="Select an option" value="" />
+              {Array.isArray(dropdownItems) && dropdownItems.map((item) => (
+                <Picker.Item
+                  key={item?.id || item?.name}
+                  label={item?.name || 'Unknown'}
+                  value={item?.id || ''}
+                />
+              ))}
+            </Picker>
+          )}
+        </View>
+      ) : (
+        <>
+          {unit && <Text style={styles.unitText}>{unit}</Text>}
+          <TextInput
+            style={[styles.input, unit && { paddingLeft: w(8) }]}
+            value={value}
+            onChangeText={onChangeText}
+            {...props}
+          />
+        </>
+      )}
     </View>
   </View>
 );
-
 const styles = StyleSheet.create({
+    pickerContainer: {
+    backgroundColor: 'white',
+    borderRadius: w(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: h(6),
+    width: '100%',
+    color: '#333',
+  },
   statusBarArea: {
     height: h(2),
   },

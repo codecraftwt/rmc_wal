@@ -72,6 +72,127 @@ export const deleteUpcomingOrder = createAsyncThunk(
   },
 );
 
+export const editUpcomingOrder = createAsyncThunk(
+  'orders/editUpcomingOrder',
+  async ({id, orderData}, {rejectWithValue}) => {
+    try {
+      const formData = new FormData();
+
+      console.log('Edit Order Data:', {
+        id,
+        orderData,
+      });
+
+      formData.append('id', id.toString());
+      formData.append('customer_id', orderData.customer_id?.toString() || '');
+      formData.append(
+        'customer_name',
+        orderData.customer_details?.toString() || '',
+      );
+      formData.append(
+        'product_grade',
+        orderData.product_grade_id?.toString() || '',
+      );
+      formData.append('quantity', orderData.quantity?.toString() || '');
+      formData.append('date', orderData.order_date || '');
+      formData.append('on_site_time', orderData.on_site_time || '');
+      formData.append('address', orderData.address || '');
+      formData.append('order_type', orderData.order_type?.toString() || '');
+
+      if (orderData.description) {
+        formData.append('description', orderData.description);
+      }
+      if (orderData.confirm !== undefined) {
+        formData.append('confirm', orderData.confirm ? '1' : '0');
+      }
+
+      const response = await AxiosInstance.post(
+        '/edit_upcoming_order_api',
+        formData,
+      );
+
+      console.log('API Response:', response.data);
+
+      if (response.data.status) {
+        return response.data;
+      } else {
+        const errorMessage = response.data.message || 'Failed to update order';
+        console.log('Error Message:', errorMessage);
+        if (response.data.errors) {
+          console.log('Validation Errors:', response.data.errors);
+        }
+        return rejectWithValue(errorMessage);
+      }
+    } catch (error) {
+      console.error('Edit order error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+      });
+      const errorMessage =
+        error.response?.data?.message || 'Failed to update order';
+      if (error.response?.data?.errors) {
+        console.log('Validation Errors:', error.response.data.errors);
+      }
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const fetchOrderDetails = createAsyncThunk(
+  'order/fetchOrderDetails',
+  async (id, {rejectWithValue}) => {
+    try {
+      const formData = new FormData();
+      formData.append('id', id.toString());
+
+      const response = await AxiosInstance.post(
+        '/get_order_details_api',
+        formData,
+      );
+
+      if (response.data.status) {
+        return response.data;
+      } else {
+        return rejectWithValue(
+          response.data.message || 'Failed to fetch order details',
+        );
+      }
+    } catch (error) {
+      console.error(
+        'Fetch order details error:',
+        error.response?.data || error.message,
+      );
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch order details',
+      );
+    }
+  },
+);
+
+export const fetchProductGrades = createAsyncThunk(
+  'order/fetchProductGrades',
+  async (_, {rejectWithValue}) => {
+    try {
+      const response = await AxiosInstance.get('/product_grade_api');
+      
+      if (response.data.status) {
+        const transformedData = response.data.data.map(item => ({
+          id: item.id.toString(),
+          name: item.name || item.product_name || 'Unknown Product'
+        }));
+        return { data: transformedData };
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to fetch product grades');
+      }
+    } catch (error) {
+      console.error('Product Grades API Error:', error); 
+      return rejectWithValue(error.message || 'Network Error');
+    }
+  },
+);
+
 const initialState = {
   loading: false,
   success: false,
@@ -81,6 +202,9 @@ const initialState = {
   deleteLoading: false,
   deleteSuccess: false,
   deleteError: null,
+  productGrades: [],
+  productGradesLoading: false,
+  productGradesError: null,
 };
 
 const orderSlice = createSlice({
@@ -154,38 +278,54 @@ const orderSlice = createSlice({
         state.deleteError = action.payload;
       });
 
-    // builder
-    //   .addCase(editUpcomingOrder.pending, state => {
-    //     state.loading = true;
-    //     state.error = null;
-    //     state.success = false;
-    //   })
-    //   .addCase(editUpcomingOrder.fulfilled, state => {
-    //     state.loading = false;
-    //     state.success = true;
-    //     state.error = null;
-    //   })
-    //   .addCase(editUpcomingOrder.rejected, (state, action) => {
-    //     state.loading = false;
-    //     state.success = false;
-    //     state.error = action.payload;
-    //   });
+    builder
+      .addCase(editUpcomingOrder.pending, state => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(editUpcomingOrder.fulfilled, state => {
+        state.loading = false;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(editUpcomingOrder.rejected, (state, action) => {
+        state.loading = false;
+        state.success = false;
+        state.error = action.payload;
+      });
 
     // Fetch Order Details
-    // builder
-    //   .addCase(fetchOrderDetails.pending, state => {
-    //     state.loading = true;
-    //     state.error = null;
-    //   })
-    //   .addCase(fetchOrderDetails.fulfilled, (state, action) => {
-    //     state.loading = false;
-    //     state.orderDetails = action.payload;
-    //     state.error = null;
-    //   })
-    //   .addCase(fetchOrderDetails.rejected, (state, action) => {
-    //     state.loading = false;
-    //     state.error = action.payload;
-    //   });
+    builder
+      .addCase(fetchOrderDetails.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchOrderDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.orderDetails = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchOrderDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Add new reducers for product grades
+    builder
+      .addCase(fetchProductGrades.pending, state => {
+        state.productGradesLoading = true;
+        state.productGradesError = null;
+      })
+      .addCase(fetchProductGrades.fulfilled, (state, action) => {
+        state.productGradesLoading = false;
+        state.productGrades = action.payload.data || [];
+        state.productGradesError = null;
+      })
+      .addCase(fetchProductGrades.rejected, (state, action) => {
+        state.productGradesLoading = false;
+        state.productGradesError = action.payload;
+      });
   },
 });
 

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   Alert,
   TextInput,
   BackHandler,
-  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {h, w, f} from 'walstar-rn-responsive';
@@ -16,8 +15,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import {useDispatch, useSelector} from 'react-redux';
-import {fetchUpcomingOrders, deleteUpcomingOrder} from '../../../Redux/slices/orderSlice';
-
+import {fetchUpcomingOrders,deleteUpcomingOrder} from '../../../Redux/slices/orderSlice';
+import {useFocusEffect} from '@react-navigation/native';
 
 const OrderCard = ({order, navigation, onDelete}) => {
   return (
@@ -110,28 +109,28 @@ const UpcomingOrders = ({navigation, route}) => {
   const [showAll, setShowAll] = useState(false);
 
   const dispatch = useDispatch();
-  const {upcomingOrders, loading, error, deleteLoading, deleteSuccess, deleteError} = useSelector(state => {
+  const {upcomingOrders, loading, error} = useSelector(state => {
     console.log('Redux State in selector:', {
-      loading: state.orders.loading,
-      error: state.orders.error,
-      hasOrders: !!state.orders.upcomingOrders,
-      ordersData: state.orders.upcomingOrders
+      loading: state.order.loading,
+      error: state.order.error,
+      hasOrders: !!state.order.upcomingOrders,
+      ordersData: state.order.upcomingOrders,
     });
-    return state.orders;
+    return state.order;
   });
 
-  useEffect(() => {
-    // console.log('Component mounted - dispatching fetchUpcomingOrders');
-    dispatch(fetchUpcomingOrders());
-  }, [dispatch]);
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchUpcomingOrders());
+    }, [dispatch]),
+  );
 
-  // Debug logs for state changes
   useEffect(() => {
     console.log('State changed:', {
       loading,
       error,
       hasOrders: !!upcomingOrders,
-      ordersData: upcomingOrders
+      ordersData: upcomingOrders,
     });
   }, [upcomingOrders, loading, error]);
 
@@ -147,9 +146,8 @@ const UpcomingOrders = ({navigation, route}) => {
     return () => backHandler.remove();
   }, [navigation]);
 
-  // Transform API data to match the UI requirements
   const transformOrder = order => {
-    // console.log('Transforming order:', order); // Debug log
+    console.log('Transforming order:', order); // Debug log
     return {
       id: order.id,
       customer_details: order.company || 'Unknown Customer',
@@ -158,22 +156,24 @@ const UpcomingOrders = ({navigation, route}) => {
       date: order.order_date || 'No date',
       onsiteTime: order.on_site_time || 'No time',
       address: order.address || 'No address',
-      type: order.order_type === '1' ? 'Pumping' : 'Dumping',
+      type: order.order_type === '1' ? 'Pumping/Dumping' : 'Delivery',
       description: order.description || 'No description',
-      status: order.confirm === '1' ? 'confirmed' : 'pending',
+      status: order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
+      confirm: order.confirm // Keep the original confirm value
     };
   };
 
-  // Transform the orders from the API response
   let transformedOrders = [];
   if (upcomingOrders && upcomingOrders.data) {
     transformedOrders = upcomingOrders.data.map(transformOrder);
+    console.log('Transformed Orders:', transformedOrders); // Debug log
   }
-  // console.log('Transformed Orders:', transformedOrders); // Debug log
 
   const filteredOrders = transformedOrders.filter(order => {
     const matchesSearch =
-      order.customer_details?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customer_details
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
       order.productGrade?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.description?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -184,13 +184,9 @@ const UpcomingOrders = ({navigation, route}) => {
     return matchesSearch && matchesStatus;
   });
 
-  // console.log('Filtered Orders:', filteredOrders); // Debug log
-
   const displayOrders = showAll
     ? filteredOrders
     : filteredOrders.slice(-3).reverse();
-
-  // console.log('Display Orders:', displayOrders); // Debug log
 
   const shouldShowToggle = filteredOrders.length > 3;
 
@@ -225,13 +221,13 @@ const UpcomingOrders = ({navigation, route}) => {
     // console.log('Rendering loading state');
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#F7374F" />
         <Text>Loading orders...</Text>
       </View>
     );
   }
 
   if (error) {
+    // console.log('Rendering error state:', error);
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error loading orders: {error}</Text>
@@ -239,10 +235,11 @@ const UpcomingOrders = ({navigation, route}) => {
     );
   }
 
+  // Debug log for final render
   console.log('Rendering main view with orders:', {
     hasOrders: !!upcomingOrders,
     ordersData: upcomingOrders,
-    displayOrdersLength: displayOrders.length
+    displayOrdersLength: displayOrders.length,
   });
 
   return (

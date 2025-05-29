@@ -14,6 +14,7 @@ import EditOrder from '../screens/orders/EditOrder';
 import AddOrder from '../screens/orders/AddOrder';
 import {useSelector} from 'react-redux';
 import SplashScreen from '../signinSignup/SplashScreen';
+import AddCustomers from '../screens/customers/AddCustomers';
 
 const Stack = createStackNavigator();
 
@@ -84,6 +85,11 @@ export const AppNavigator = () => {
           <Stack.Screen
             name="AddOrder"
             component={AddOrder}
+            options={{headerShown: false}}
+          />
+          <Stack.Screen
+            name="AddCustomers"
+            component={AddCustomers}
             options={{headerShown: false}}
           />
         </>
