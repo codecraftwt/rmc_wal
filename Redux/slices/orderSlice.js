@@ -128,6 +128,50 @@ export const fetchProductGrades = createAsyncThunk(
   },
 );
 
+export const fetchCustomers = createAsyncThunk(
+  'order/fetchCustomers',
+  async (_, {rejectWithValue}) => {
+    try {
+      const response = await AxiosInstance.get('/get_customers_details_api');
+      
+      if (response.data.status) {
+        const transformedData = response.data.data.map(item => ({
+          id: item.userid,
+          name: item.company,
+          vat: item.vat,
+          phone: item.phonenumber,
+          country: item.country,
+          city: item.city,
+          zip: item.zip,
+          state: item.state,
+          address: item.address,
+          website: item.website,
+          billing: {
+            street: item.billing_street,
+            city: item.billing_city,
+            state: item.billing_state,
+            zip: item.billing_zip,
+            country: item.billing_country
+          },
+          shipping: {
+            street: item.shipping_street,
+            city: item.shipping_city,
+            state: item.shipping_state,
+            zip: item.shipping_zip,
+            country: item.shipping_country
+          }
+        }));
+        return { data: transformedData };
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to fetch customers');
+      }
+    } catch (error) {
+      console.error('Customers API Error:', error);
+      return rejectWithValue(error.message || 'Network Error');
+    }
+  }
+);
+
 const initialState = {
   loading: false,
   success: false,
@@ -140,6 +184,9 @@ const initialState = {
   productGrades: [],
   productGradesLoading: false,
   productGradesError: null,
+  customers: [],
+  customersLoading: false,
+  customersError: null,
 };
 
 const orderSlice = createSlice({
@@ -226,6 +273,22 @@ const orderSlice = createSlice({
       .addCase(fetchProductGrades.rejected, (state, action) => {
         state.productGradesLoading = false;
         state.productGradesError = action.payload;
+      });
+
+    // Add new reducers for customers
+    builder
+      .addCase(fetchCustomers.pending, state => {
+        state.customersLoading = true;
+        state.customersError = null;
+      })
+      .addCase(fetchCustomers.fulfilled, (state, action) => {
+        state.customersLoading = false;
+        state.customers = action.payload.data || [];
+        state.customersError = null;
+      })
+      .addCase(fetchCustomers.rejected, (state, action) => {
+        state.customersLoading = false;
+        state.customersError = action.payload;
       });
   },
 });

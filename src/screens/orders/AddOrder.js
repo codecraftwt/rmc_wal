@@ -18,10 +18,13 @@ import Header from '../../component/Header';
 import DatePicker from 'react-native-date-picker';
 import {useDispatch, useSelector} from 'react-redux';
 import {
-  addUpcomingOrder,
+  addUpcomingOrder, 
   resetAddOrderState,
-  fetchProductGrades,
 } from '../../../Redux/slices/addOrderSlice';
+import {
+  fetchProductGrades,
+  fetchCustomers,
+} from '../../../Redux/slices/orderSlice';
 import {Picker} from '@react-native-picker/picker';
 
 const AddOrder = ({navigation}) => {
@@ -31,8 +34,10 @@ const AddOrder = ({navigation}) => {
   const {productGrades, productGradesLoading} = useSelector(
     state => state.order,
   );
+  const {customers, customersLoading} = useSelector(state => state.order);
 
   const [formData, setFormData] = useState({
+    customer_id: '',
     customer_name: '',
     product_grade: '',
     quantity: '',
@@ -48,6 +53,11 @@ const AddOrder = ({navigation}) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
+
+  useEffect(() => {
+    dispatch(fetchProductGrades());
+    dispatch(fetchCustomers());
+  }, [dispatch]);
 
   useEffect(() => {
     const backAction = () => {
@@ -87,6 +97,18 @@ const AddOrder = ({navigation}) => {
     }));
   };
 
+  const handleCustomerSelect = (customerId) => {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    if (selectedCustomer) {
+      setFormData(prev => ({
+        ...prev,
+        customer_id: selectedCustomer.id,
+        customer_name: selectedCustomer.id.toString(),
+        address: selectedCustomer.address,
+      }));
+    }
+  };
+
   const handleDateConfirm = date => {
     setDatePickerOpen(false);
     setSelectedDate(date);
@@ -106,7 +128,28 @@ const AddOrder = ({navigation}) => {
   };
 
   const handleSubmit = () => {
-    dispatch(addUpcomingOrder(formData));
+    if (!formData.customer_name || !formData.product_grade || !formData.quantity || 
+        !formData.date || !formData.on_site_time || !formData.address || !formData.order_type) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    // Convert order type to numeric value
+    const orderTypeValue = formData.order_type === 'Pumping' ? '1' : '2';
+
+    const submissionData = {
+      customer_name: formData.customer_name,
+      product_grade: formData.product_grade,
+      quantity: formData.quantity?.toString().replace(/[^0-9.]/g, ''),
+      date: formData.date?.trim(),
+      on_site_time: formData.on_site_time?.trim(),
+      address: formData.address?.trim(),
+      order_type: orderTypeValue,
+      description: formData.description || '',
+      confirm: formData.confirm || '0'
+    };
+
+    dispatch(addUpcomingOrder(submissionData));
   };
 
   const orderTypes = [
@@ -135,13 +178,43 @@ const AddOrder = ({navigation}) => {
         />
 
         <ScrollView contentContainerStyle={styles.formContainer}>
-          <FormField
-            icon="person-outline"
-            label="Customer Name"
-            value={formData.customer_name}
-            onChangeText={text => handleChange('customer_name', text)}
-            required
-          />
+          <View style={styles.fieldContainer}>
+            <View style={styles.fieldLabel}>
+              <Icon
+                name="person-outline"
+                size={f(2.5)}
+                color="#F7374F"
+                style={styles.fieldIcon}
+              />
+              <Text style={styles.labelText}>
+                Customer Name<Text style={styles.required}> *</Text>
+              </Text>
+            </View>
+            <View style={styles.pickerContainer}>
+              {customersLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#F7374F" />
+                </View>
+              ) : (
+                <Picker
+                  selectedValue={formData.customer_id}
+                  onValueChange={handleCustomerSelect}
+                  style={styles.picker}
+                  dropdownIconColor="#F7374F"
+                >
+                  <Picker.Item label="Select a customer" value="" />
+                  {Array.isArray(customers) && customers.map((item) => (
+                    <Picker.Item
+                      key={item.id}
+                      label={item.name}
+                      value={item.id}
+                    />
+                  ))}
+                </Picker>
+              )}
+            </View>
+          </View>
+
           <FormField
             icon="cube-outline"
             label="Product Grade"

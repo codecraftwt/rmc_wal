@@ -16,10 +16,21 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import {useDispatch, useSelector} from 'react-redux';
-import {fetchUpcomingOrders,deleteUpcomingOrder} from '../../../Redux/slices/orderSlice';
+import {
+  fetchUpcomingOrders,
+  deleteUpcomingOrder,
+} from '../../../Redux/slices/orderSlice';
 import {useFocusEffect} from '@react-navigation/native';
 
 const OrderCard = ({order, navigation, onDelete}) => {
+  function convertTo12Hour(time24) {
+    const [hourStr, minute] = time24.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
+  }
   return (
     <View
       style={[
@@ -167,8 +178,9 @@ const UpcomingOrders = ({navigation, route}) => {
       address: order.address || 'No address',
       type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
-      status: order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
-      confirm: order.confirm // Keep the original confirm value
+      status:
+        order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
+      confirm: order.confirm, // Keep the original confirm value
     };
   };
 
@@ -193,9 +205,7 @@ const UpcomingOrders = ({navigation, route}) => {
     return matchesSearch && matchesStatus;
   });
 
-  const displayOrders = showAll
-    ? filteredOrders
-    : filteredOrders.slice(0,3);
+  const displayOrders = showAll ? filteredOrders : filteredOrders.slice(0, 3);
 
   const shouldShowToggle = filteredOrders.length > 3;
 
@@ -215,7 +225,10 @@ const UpcomingOrders = ({navigation, route}) => {
                 dispatch(fetchUpcomingOrders());
                 Alert.alert('Success', 'Order deleted successfully');
               } else if (deleteUpcomingOrder.rejected.match(resultAction)) {
-                Alert.alert('Error', 'Failed to delete order. Please try again.');
+                Alert.alert(
+                  'Error',
+                  'Failed to delete order. Please try again.',
+                );
               }
             } catch (error) {
               Alert.alert('Error', 'An unexpected error occurred');
@@ -252,15 +265,6 @@ const UpcomingOrders = ({navigation, route}) => {
     displayOrdersLength: displayOrders.length,
   });
 
-  function convertTo12Hour(time24) {
-    const [hourStr, minute] = time24.split(':');
-    let hour = parseInt(hourStr, 10);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12;
-    if (hour === 0) hour = 12;
-    return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
-  }
-
   return (
     <>
       <LinearGradient
@@ -281,7 +285,7 @@ const UpcomingOrders = ({navigation, route}) => {
           showBackButton="arrow-back"
           navigation={navigation}
           rightIcon="add"
-          onBackPress={() => navigation.navigate('MainTabs')} 
+          onBackPress={() => navigation.navigate('MainTabs')}
           onRightIconPress={() => navigation.navigate('AddOrder')}
         />
 
