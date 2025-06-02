@@ -30,14 +30,25 @@ const OrderCard = ({order, navigation, onDelete}) => {
     hour = hour % 12;
     if (hour === 0) hour = 12;
     return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
+
+
   }
+    // order.map(order.customer_details) kadre stone
+  console.log("orderorderorderorder", order)
+
+  // const kkkk =  order
+  // .filter(o => o.customer_details === "kadre stone")
+  // .forEach(o => console.log("kadre stone", o));
+
+  // console.log("kkkkkkkkkkkkkkkk", kkkk)
+
   return (
     <View
       style={[
         styles.card,
         {
           borderLeftWidth: 4,
-          borderLeftColor: order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
+          borderLeftColor: order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
         },
       ]}>
       <View style={styles.cardHeader}>
@@ -95,19 +106,19 @@ const OrderCard = ({order, navigation, onDelete}) => {
               styles.statusBadge,
               {
                 backgroundColor:
-                  order.status === 'confirmed'
+                  order.confirm === 'confirmed'
                     ? 'rgba(76, 175, 80, 0.1)'
                     : 'rgba(255, 193, 7, 0.1)',
                 borderColor:
-                  order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
+                  order.confirm === 1 ? '#4CAF50' : '#FFC107',
               },
             ]}>
             <Text
               style={[
                 styles.statusText,
-                {color: order.status === 'confirmed' ? '#4CAF50' : '#FFA000'},
+                {color: order.confirm === 'confirmed' ? '#4CAF50' : '#FFA000'},
               ]}>
-              {order.status === 'confirmed' ? '✓ Confirmed' : '⌛ Pending'}
+              {order.confirm === 'confirmed' ? '✓ Confirmed' : '⌛ Pending'}
             </Text>
           </View>
         </View>
@@ -178,9 +189,9 @@ const UpcomingOrders = ({navigation, route}) => {
       address: order.address || 'No address',
       type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
-      status:
-        order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
-      confirm: order.confirm, // Keep the original confirm value
+      // status:
+        confirm:  order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
+      // confirm: order.confirm === 1 ? 'confirmed' : 'pending', // Keep the original confirm value
     };
   };
 

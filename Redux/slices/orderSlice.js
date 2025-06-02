@@ -7,7 +7,7 @@ export const fetchUpcomingOrders = createAsyncThunk(
   async (_, {rejectWithValue}) => {
     try {
       const response = await AxiosInstance.get(`${baseURL}/upcoming_order_api`);
-
+       console.log("gettttttttttting initial fetchupcomming order", response.data)
       if (response.data.status) {
         return response.data;
       } else {
@@ -69,15 +69,16 @@ export const editUpcomingOrder = createAsyncThunk(
         formData.append('description', orderData.description);
       }
       if (orderData.confirm !== undefined) {
-        formData.append('confirm', orderData.confirm ? '1' : '0');
+        formData.append('confirm', orderData.confirm );
       }
-
+     console.log("EditUpcomming -----", formData);
+     
       const response = await AxiosInstance.post(
         '/edit_upcoming_order_api',
         formData,
       );
 
-      console.log('API Response:', response.data);
+      console.log('API Response:EditUpcomming', response.data);
 
       if (response.data.status) {
         return response.data;
@@ -212,6 +213,7 @@ const orderSlice = createSlice({
           'Fetch orders fulfilled - setting loading to false and updating orders',
         );
         state.loading = false;
+        console.log("upcomingOrdersupcomingOrdersupcomingOrders-Redux", action.payload )
         state.upcomingOrders = action.payload;
         state.error = null;
       })

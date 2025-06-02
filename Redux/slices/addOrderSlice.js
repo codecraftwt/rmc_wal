@@ -16,7 +16,7 @@ export const addUpcomingOrder = createAsyncThunk(
       form.append('address', formData.address);
       form.append('order_type', formData.order_type); // 1 / 2
       if (formData.description) form.append('description', formData.description);
-      form.append('confirm', formData.confirm ?? '0');
+      form.append('confirm', formData.confirm);
 
       const response = await AxiosInstance.post(
         '/add_upcoming_order_api',

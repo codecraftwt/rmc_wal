@@ -15,7 +15,8 @@ import Header from '../../component/Header';
 
 const OrderDetails = ({route, navigation}) => {
   const {order} = route.params;
-  console.log("order_details ---->",order);
+  console.log('Order Data:', order);
+  // console.log("order_details ---->",order);
   // console.log("order_details_type",order?.type);
 
 
@@ -63,13 +64,13 @@ const OrderDetails = ({route, navigation}) => {
                   styles.statusBadge,
                   {
                     backgroundColor:
-                      order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
+                      order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
                     shadowColor:
-                      order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
+                      order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
                   },
                 ]}>
                 <Text style={styles.statusText}>
-                  {order.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                  {order.confirm === 'confirmed' ? 'Confirmed' : 'Pending'}
                 </Text>
               </View>
             </View>

@@ -26,6 +26,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 const EditOrder = ({route, navigation}) => {
   const dispatch = useDispatch();
   const {order} = route.params;
+  console.log(' EditData:', order);
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -52,7 +53,9 @@ const EditOrder = ({route, navigation}) => {
     order_type:
       order.order_type || (order.type === 'Pumping' ? '1' : '2') || '',
     description: order.description || '',
-    confirm: order.confirm === 1 ? '1' : '0',
+    // status: order.status === 1 ? 'confirmed' : '0',
+    // confirm: order.status === 1 ? 1 : 0,
+    confirm: order.confirm === "confirmed" ? "1" : "0",
   });
 
   useEffect(() => {
@@ -95,8 +98,9 @@ const EditOrder = ({route, navigation}) => {
         order_type: formData.order_type?.toString(),
         customer_id: formData.customer_id?.toString(),
         product_grade_id: formData.product_grade_id?.toString(),
-        confirm: formData.confirm,
+        confirm: formData.confirm?.toString(),
       };
+      console.log("formattedData", formattedData)
 
       const resultAction = await dispatch(
         editUpcomingOrder({id: order.id, orderData: formattedData}),
@@ -143,6 +147,11 @@ const EditOrder = ({route, navigation}) => {
     });
     handleChange('on_site_time', formattedTime);
   };
+
+
+  useEffect(() => {
+  console.log('Updated formData:', formData,);
+}, [formData]);
   return (
     <>
       <LinearGradient
@@ -184,7 +193,12 @@ const EditOrder = ({route, navigation}) => {
                     style={styles.picker}
                     dropdownIconColor="#F7374F">
                     {/* <Picker.Item label="Select a product grade" value="" /> */}
-                    <Picker.Item label={formData.product_grade_id || 'Select a product grade' } value=""/>
+                    <Picker.Item
+                      label={
+                        formData.product_grade_id || 'Select a product grade'
+                      }
+                      value=""
+                    />
 
                     {Array.isArray(productGrades) &&
                       productGrades.map(item => (
@@ -216,8 +230,14 @@ const EditOrder = ({route, navigation}) => {
                   onChangeText={text => handleChange('order_date', text)}
                   placeholder="YYYY-MM-DD"
                 /> */}
-                <TouchableOpacity onPress={() => setDatePickerOpen(true)} style={styles.dateInput}>
-                  <Text style={[styles.dateInputText, !formData.order_date && { color: '#999' }]}>
+                <TouchableOpacity
+                  onPress={() => setDatePickerOpen(true)}
+                  style={styles.dateInput}>
+                  <Text
+                    style={[
+                      styles.dateInputText,
+                      !formData.order_date && {color: '#999'},
+                    ]}>
                     {formData.order_date || 'Select a date'}
                   </Text>
                   <Icon name="calendar" size={f(2.5)} color="#F7374F" />
@@ -231,8 +251,14 @@ const EditOrder = ({route, navigation}) => {
                   onChangeText={text => handleChange('on_site_time', text)}
                   placeholder="HH:MM AM/PM"
                 /> */}
-                <TouchableOpacity onPress={() => setTimePickerOpen(true)} style={styles.dateInput}>
-                  <Text style={[styles.dateInputText, !formData.on_site_time && { color: '#999' }]}>
+                <TouchableOpacity
+                  onPress={() => setTimePickerOpen(true)}
+                  style={styles.dateInput}>
+                  <Text
+                    style={[
+                      styles.dateInputText,
+                      !formData.on_site_time && {color: '#999'},
+                    ]}>
                     {formData.on_site_time || 'Select time'}
                   </Text>
                   <Icon name="time" size={f(2.5)} color="#F7374F" />
@@ -342,6 +368,40 @@ const EditOrder = ({route, navigation}) => {
                 </TouchableOpacity>
               </View>
             </View>
+            {/* <TouchableOpacity
+  style={[
+    styles.statusButton,
+    formData.confirm === 1 && styles.statusButtonActive,
+  ]}
+  onPress={() => handleChange('confirm', 1)} // pass number 1
+>
+  <Text
+    style={[
+      styles.statusButtonText,
+      formData.confirm === 1 && styles.statusButtonTextActive,
+    ]}
+  >
+    Confirmed
+  </Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+  style={[
+    styles.statusButton,
+    formData.confirm === 0 && styles.statusButtonActive,
+  ]}
+  onPress={() => handleChange('confirm', 0)} // pass number 0
+>
+  <Text
+    style={[
+      styles.statusButtonText,
+      formData.confirm === 0 && styles.statusButtonTextActive,
+    ]}
+  >
+    Pending
+  </Text>
+</TouchableOpacity> */}
+
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
               style={styles.updateButton}

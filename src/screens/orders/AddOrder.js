@@ -46,7 +46,7 @@ const AddOrder = ({navigation}) => {
     address: '',
     order_type: '',
     description: '',
-    confirm: '0',
+    confirm: '',
   });
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -146,7 +146,7 @@ const AddOrder = ({navigation}) => {
       address: formData.address?.trim(),
       order_type: orderTypeValue,
       description: formData.description || '',
-      confirm: formData.confirm || '0'
+      confirm: formData.confirm || ''
     };
 
     dispatch(addUpcomingOrder(submissionData));
@@ -356,6 +356,32 @@ const AddOrder = ({navigation}) => {
             onChangeText={text => handleChange('description', text)}
             multiline
           />
+          <View style={{ marginBottom: 20 }}>
+  <Text style={{ fontSize: 16, marginBottom: 8 }}>Status</Text>
+  <View
+    style={{
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 5,
+      overflow: 'hidden',
+      backgroundColor: '#ffffff',
+    }}
+  >
+    <Picker
+      selectedValue={formData.confirm}
+      onValueChange={(itemValue) =>
+        setFormData((prev) => ({ ...prev, confirm: itemValue }))
+      }
+      mode="dropdown"
+      style={{ height: 55 }}
+    >
+      <Picker.Item label="Select Status" value="" />
+      <Picker.Item label="Pending" value="0" />
+      <Picker.Item label="Confirm" value="1" />
+    </Picker>
+  </View>
+</View>
+
 
           <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
             <LinearGradient
