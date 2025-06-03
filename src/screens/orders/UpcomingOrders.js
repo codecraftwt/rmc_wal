@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,25 @@ import {
   TextInput,
   BackHandler,
   ActivityIndicator,
+  Platform,
+  Animated,
+  Modal,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {h, w, f} from 'walstar-rn-responsive';
+import { h, w, f } from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchUpcomingOrders,
   deleteUpcomingOrder,
 } from '../../../Redux/slices/orderSlice';
-import {useFocusEffect} from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
+import Calendar from 'react-native-calendars';
 
-const OrderCard = ({order, navigation, onDelete}) => {
-  console.log("order_orderfromUpcoming",order)
+const OrderCard = ({ order, navigation, onDelete }) => {
+  console.log("order_orderfromUpcoming", order)
   function convertTo12Hour(time24) {
     const [hourStr, minute] = time24.split(':');
     let hour = parseInt(hourStr, 10);
@@ -46,8 +50,8 @@ const OrderCard = ({order, navigation, onDelete}) => {
           <LinearGradient
             colors={['#4A90E2', '#5D9DF5']}
             style={styles.avatar}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}>
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
             <Icon name="person" size={f(2.5)} color="#FFF" />
           </LinearGradient>
           <Text style={styles.customerName}>{order.customer_details}</Text>
@@ -55,7 +59,7 @@ const OrderCard = ({order, navigation, onDelete}) => {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('EditOrder', {order})}
+            onPress={() => navigation.navigate('EditOrder', { order })}
             style={styles.editButton}>
             <Icon name="create-outline" size={f(2.5)} color="#4A90E2" />
           </TouchableOpacity>
@@ -69,7 +73,7 @@ const OrderCard = ({order, navigation, onDelete}) => {
       </View>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate('OrderDetails', {order})}
+        onPress={() => navigation.navigate('OrderDetails', { order })}
         activeOpacity={0.8}>
         <View style={styles.detailRow}>
           <View style={styles.iconCircle}>
@@ -105,7 +109,7 @@ const OrderCard = ({order, navigation, onDelete}) => {
             <Text
               style={[
                 styles.statusText,
-                {color: order.status === 'confirmed' ? '#4CAF50' : '#FFA000'},
+                { color: order.status === 'confirmed' ? '#4CAF50' : '#FFA000' },
               ]}>
               {order.status === 'confirmed' ? '✓ Confirmed' : '⌛ Pending'}
             </Text>
@@ -116,13 +120,16 @@ const OrderCard = ({order, navigation, onDelete}) => {
   );
 };
 
-const UpcomingOrders = ({navigation, route}) => {
+const UpcomingOrders = ({ navigation, route }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [activeTab, setActiveTab] = useState('pending');
   const [showAll, setShowAll] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  // const [showCalendar, setShowCalendar] = useState(false);
+  const slideAnim = useState(new Animated.Value(0))[0];
 
   const dispatch = useDispatch();
-  const {upcomingOrders, loading, error} = useSelector(state => {
+  const { upcomingOrders, loading, error } = useSelector(state => {
     console.log('Redux State in selector:', {
       loading: state.order.loading,
       error: state.order.error,
@@ -167,7 +174,7 @@ const UpcomingOrders = ({navigation, route}) => {
   }, [navigation]);
 
   const transformOrder = order => {
-    console.log('Transforming order:', order); 
+    console.log('Transforming order:', order);
     return {
       id: order.id,
       customer_details: order.company || 'Unknown Customer',
@@ -190,6 +197,14 @@ const UpcomingOrders = ({navigation, route}) => {
     console.log('Transformed Orders:', transformedOrders);
   }
 
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+
+  const isSameDay = (date1, date2) => {
+    return formatDate(date1) === formatDate(date2);
+  };
+
   const filteredOrders = transformedOrders.filter(order => {
     const matchesSearch =
       order.customer_details
@@ -199,10 +214,17 @@ const UpcomingOrders = ({navigation, route}) => {
       order.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      filterStatus === 'all' || order.status === filterStatus;
+    const matchesTab = activeTab === 'all'
+      ? true
+      : activeTab === 'pending'
+        ? order.status === 'pending'
+        : order.status === 'confirmed';
 
-    return matchesSearch && matchesStatus;
+    const matchesDate = selectedDate
+      ? isSameDay(new Date(order.date), selectedDate)
+      : true;
+
+    return matchesSearch && matchesTab && matchesDate;
   });
 
   const displayOrders = showAll ? filteredOrders : filteredOrders.slice(0, 3);
@@ -214,7 +236,7 @@ const UpcomingOrders = ({navigation, route}) => {
       'Confirm Delete',
       'Are you sure you want to delete this order?',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
@@ -238,6 +260,21 @@ const UpcomingOrders = ({navigation, route}) => {
       ],
     );
   };
+
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+    Animated.spring(slideAnim, {
+      toValue: tab === 'pending' ? 0 : 1,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 7,
+    }).start();
+  };
+
+  // const handleDateSelect = (date) => {
+  //   setSelectedDate(new Date(date.timestamp));
+  //   setShowCalendar(false);
+  // };
 
   if (loading) {
     // console.log('Rendering loading state');
@@ -270,16 +307,16 @@ const UpcomingOrders = ({navigation, route}) => {
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
 
       <LinearGradient
         colors={['#F8FAFF', '#F0F4FF']}
         style={styles.container}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
         <Header
           title="Upcoming Orders"
           showBackButton="arrow-back"
@@ -289,25 +326,107 @@ const UpcomingOrders = ({navigation, route}) => {
           onRightIconPress={() => navigation.navigate('AddOrder')}
         />
 
-        <View style={styles.searchContainer}>
-          <Icon
-            name="search"
-            size={f(2.5)}
-            color="#888"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by company, material, or address"
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="close-circle" size={f(2.5)} color="#888" />
+        <View style={styles.tabContainer}>
+          <View style={styles.tabBackground}>
+            <Animated.View
+              style={[
+                styles.tabIndicator,
+                {
+                  transform: [
+                    {
+                      translateX: slideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, w(43)],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            />
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
+              onPress={() => handleTabPress('pending')}>
+              <Icon
+                name="time-outline"
+                size={f(2.2)}
+                color={activeTab === 'pending' ? '#F7374F' : '#666'}
+                style={styles.tabIcon}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'pending' && styles.activeTabText,
+                ]}>
+                Pending
+              </Text>
             </TouchableOpacity>
-          ) : null}
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'confirmed' && styles.activeTab]}
+              onPress={() => handleTabPress('confirmed')}>
+              <Icon
+                name="checkmark-circle-outline"
+                size={f(2.2)}
+                color={activeTab === 'confirmed' ? '#F7374F' : '#666'}
+                style={styles.tabIcon}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'confirmed' && styles.activeTabText,
+                ]}>
+                Confirmed
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.filterContainer}>
+          <View style={styles.searchContainer}>
+            <Icon
+              name="search"
+              size={f(2.5)}
+              color="#888"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by company, material, or address"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="close-circle" size={f(2.5)} color="#888" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {/* <TouchableOpacity
+            style={[
+              styles.dateFilterButton,
+              selectedDate && styles.dateFilterButtonActive,
+            ]}
+            onPress={() => setShowCalendar(true)}>
+            <Icon
+              name="calendar-outline"
+              size={f(2.5)}
+              color={selectedDate ? '#FFFFFF' : '#F7374F'}
+            />
+            {selectedDate && (
+              <View style={styles.dateFilterBadge}>
+                <Text style={styles.dateFilterBadgeText}>1</Text>
+              </View>
+            )}
+          </TouchableOpacity> */}
+
+          {selectedDate && (
+            <TouchableOpacity
+              style={styles.clearDateButton}
+              onPress={() => setSelectedDate(null)}>
+              <Icon name="close-circle" size={f(2.5)} color="#F7374F" />
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.headerRow}>
@@ -330,7 +449,7 @@ const UpcomingOrders = ({navigation, route}) => {
 
         <FlatList
           data={displayOrders}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <OrderCard
               order={item}
               navigation={navigation}
@@ -344,7 +463,7 @@ const UpcomingOrders = ({navigation, route}) => {
             <View style={styles.emptyContainer}>
               <Icon name="file-tray-outline" size={f(8)} color="#CCCCCC" />
               <Text style={styles.emptyText}>No orders found</Text>
-              {searchQuery || filterStatus !== 'all' ? null : (
+              {searchQuery || activeTab !== 'all' ? null : (
                 <TouchableOpacity
                   style={styles.addEmptyButton}
                   onPress={() => navigation.navigate('AddOrder')}>
@@ -359,6 +478,59 @@ const UpcomingOrders = ({navigation, route}) => {
             <ActivityIndicator size="large" color="#F7374F" />
           </View>
         )}
+
+        {/* <Modal
+          visible={showCalendar}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowCalendar(false)}>
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowCalendar(false)}>
+            <View style={styles.calendarContainer}>
+              <View style={styles.calendarHeader}>
+                <Text style={styles.calendarTitle}>Select Date</Text>
+                <TouchableOpacity
+                  onPress={() => setShowCalendar(false)}
+                  style={styles.closeButton}>
+                  <Icon name="close" size={f(2.5)} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <Calendar
+                onDayPress={handleDateSelect}
+                minDate={formatDate(new Date())}
+                markedDates={
+                  selectedDate
+                    ? {
+                      [formatDate(selectedDate)]: {
+                        selected: true,
+                        selectedColor: '#F7374F',
+                      },
+                    }
+                    : {}
+                }
+                theme={{
+                  calendarBackground: '#FFFFFF',
+                  textSectionTitleColor: '#666',
+                  selectedDayBackgroundColor: '#F7374F',
+                  selectedDayTextColor: '#FFFFFF',
+                  todayTextColor: '#F7374F',
+                  dayTextColor: '#333',
+                  textDisabledColor: '#999',
+                  dotColor: '#F7374F',
+                  selectedDotColor: '#FFFFFF',
+                  arrowColor: '#F7374F',
+                  monthTextColor: '#333',
+                  indicatorColor: '#F7374F',
+                  textDayFontSize: f(2),
+                  textMonthFontSize: f(2.2),
+                  textDayHeaderFontSize: f(2),
+                }}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal> */}
       </LinearGradient>
     </>
   );
@@ -426,7 +598,7 @@ const styles = StyleSheet.create({
     padding: w(4),
     marginBottom: h(2),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
@@ -513,18 +685,17 @@ const styles = StyleSheet.create({
     fontSize: f(1.9),
   },
   searchContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 8,
     paddingHorizontal: w(4),
     paddingVertical: h(1),
-    marginHorizontal: w(4),
-    marginTop: h(2),
-    marginBottom: h(1),
+    marginRight: w(2),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
@@ -582,6 +753,139 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
+  },
+  tabContainer: {
+    marginHorizontal: w(4),
+    marginTop: h(2),
+    marginBottom: h(1),
+  },
+  tabBackground: {
+    flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
+    borderRadius: w(3),
+    padding: w(0.5),
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabIndicator: {
+    position: 'absolute',
+    width: w(43),
+    height: h(5.5),
+    backgroundColor: '#FFFFFF',
+    borderRadius: w(2.5),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: h(1.2),
+    paddingHorizontal: w(2),
+    borderRadius: w(2.5),
+    zIndex: 1,
+  },
+  activeTab: {
+    backgroundColor: 'transparent',
+  },
+  tabText: {
+    fontSize: f(2),
+    color: '#666',
+    fontWeight: '500',
+    marginLeft: w(1),
+  },
+  activeTabText: {
+    color: '#F7374F',
+    fontWeight: '600',
+  },
+  tabIcon: {
+    marginRight: w(1),
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: w(4),
+    marginTop: Platform.OS === 'android' ? h(2) : 0,
+    marginBottom: h(1),
+  },
+  dateFilterButton: {
+    width: w(12),
+    height: w(12),
+    borderRadius: w(2),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#F7374F',
+  },
+  dateFilterButtonActive: {
+    backgroundColor: '#F7374F',
+  },
+  clearDateButton: {
+    marginLeft: w(2),
+    padding: w(1),
+  },
+  dateFilterBadge: {
+    position: 'absolute',
+    top: -w(1),
+    right: -w(1),
+    backgroundColor: '#FFFFFF',
+    borderRadius: w(2),
+    width: w(4),
+    height: w(4),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F7374F',
+  },
+  dateFilterBadgeText: {
+    color: '#F7374F',
+    fontSize: f(1.5),
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  calendarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: w(3),
+    width: w(90),
+    padding: w(4),
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: h(2),
+  },
+  calendarTitle: {
+    fontSize: f(2.5),
+    fontWeight: '600',
+    color: '#333',
+  },
+  closeButton: {
+    padding: w(1),
   },
 });
 export default UpcomingOrders;

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,17 +12,17 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
-import {h, w, f} from 'walstar-rn-responsive';
+import { h, w, f } from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   editUpcomingOrder,
   fetchProductGrades,
   fetchCustomers
 } from '../../../Redux/slices/orderSlice';
-import {Picker} from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker';
 import DatePicker from 'react-native-date-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -44,7 +44,11 @@ const CustomDropdown = ({
   useEffect(() => {
     if (value && items) {
       const selectedItem = items.find(item => getValue(item) === value);
-      setSelectedLabel(selectedItem ? getLabel(selectedItem) : placeholder);
+      if (selectedItem) {
+        setSelectedLabel(getLabel(selectedItem));
+      } else {
+        setSelectedLabel(placeholder);
+      }
     } else {
       setSelectedLabel(placeholder);
     }
@@ -93,8 +97,8 @@ const CustomDropdown = ({
                 <LinearGradient
                   colors={['#F7374F', '#FF6B6B']}
                   style={styles.dropdownHeader}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}>
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}>
                   <Text style={styles.dropdownTitle}>{placeholder}</Text>
                   <TouchableOpacity
                     onPress={handleClose}
@@ -141,14 +145,14 @@ const CustomDropdown = ({
                           style={[
                             styles.dropdownItem,
                             value === getValue(item) &&
-                              styles.dropdownItemSelected,
+                            styles.dropdownItemSelected,
                           ]}
                           onPress={() => handleSelect(item)}>
                           <Text
                             style={[
                               styles.dropdownItemText,
                               value === getValue(item) &&
-                                styles.dropdownItemTextSelected,
+                              styles.dropdownItemTextSelected,
                             ]}>
                             {getLabel(item)}
                           </Text>
@@ -180,9 +184,9 @@ const CustomDropdown = ({
   );
 };
 
-const EditOrder = ({route, navigation}) => {
+const EditOrder = ({ route, navigation }) => {
   const dispatch = useDispatch();
-  const {order} = route.params;
+  const { order } = route.params;
   console.log(' EditData:', order);
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -190,7 +194,7 @@ const EditOrder = ({route, navigation}) => {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
 
-  const {productGrades, productGradesLoading, customers, customersLoading} = useSelector(
+  const { productGrades, productGradesLoading, customers, customersLoading } = useSelector(
     state => state.order,
   );
 
@@ -211,6 +215,31 @@ const EditOrder = ({route, navigation}) => {
     description: order.description || '',
     confirm: order.confirm === "confirmed" ? "1" : "0",
   });
+
+  // Add this useEffect to set initial values when data is loaded
+  useEffect(() => {
+    if (customers && customers.length > 0 && formData.customer_id) {
+      const selectedCustomer = customers.find(c => c.id === formData.customer_id);
+      if (selectedCustomer) {
+        setFormData(prev => ({
+          ...prev,
+          customer_details: selectedCustomer.name
+        }));
+      }
+    }
+  }, [customers, formData.customer_id]);
+
+  useEffect(() => {
+    if (productGrades && productGrades.length > 0 && formData.product_grade_id) {
+      const selectedGrade = productGrades.find(g => g.id === formData.product_grade_id);
+      if (selectedGrade) {
+        setFormData(prev => ({
+          ...prev,
+          product_grade_name: selectedGrade.name
+        }));
+      }
+    }
+  }, [productGrades, formData.product_grade_id]);
 
   useEffect(() => {
     dispatch(fetchProductGrades());
@@ -269,7 +298,7 @@ const EditOrder = ({route, navigation}) => {
       console.log("formattedData", formattedData)
 
       const resultAction = await dispatch(
-        editUpcomingOrder({id: order.id, orderData: formattedData}),
+        editUpcomingOrder({ id: order.id, orderData: formattedData }),
       );
 
       if (editUpcomingOrder.fulfilled.match(resultAction)) {
@@ -282,7 +311,7 @@ const EditOrder = ({route, navigation}) => {
               onPress: () => navigation.navigate('UpcomingOrders'),
             },
           ],
-          {cancelable: false},
+          { cancelable: false },
         );
       } else {
         const errorMessage = resultAction.payload;
@@ -293,7 +322,7 @@ const EditOrder = ({route, navigation}) => {
     }
   };
   const handleChange = (field, value) => {
-    setFormData({...formData, [field]: value});
+    setFormData({ ...formData, [field]: value });
   };
 
   const handleDateConfirm = date => {
@@ -315,15 +344,15 @@ const EditOrder = ({route, navigation}) => {
   };
 
   useEffect(() => {
-  console.log('Updated formData:', formData,);
-}, [formData]);
+    console.log('Updated formData:', formData,);
+  }, [formData]);
   return (
     <>
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
       <View style={styles.container}>
@@ -340,7 +369,7 @@ const EditOrder = ({route, navigation}) => {
                 value={formData.customer_id}
                 onValueChange={handleCustomerSelect}
                 items={customers || []}
-                placeholder="Select a company"
+                placeholder={formData.customer_details || "Select a company"}
                 loading={customersLoading}
                 style={styles.pickerContainer}
                 getLabel={item => item.name}
@@ -349,37 +378,23 @@ const EditOrder = ({route, navigation}) => {
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Product Grade</Text>
-              <View style={styles.pickerContainer}>
-                {productGradesLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="#F7374F" />
-                  </View>
-                ) : (
-                  <Picker
-                    selectedValue={formData.product_grade_id}
-                    onValueChange={value =>
-                      handleChange('product_grade_id', value)
-                    }
-                    style={styles.picker}
-                    dropdownIconColor="#F7374F">
-                    <Picker.Item
-                      label={
-                        formData.product_grade_id || 'Select a product grade'
-                      }
-                      value=""
-                    />
-
-                    {Array.isArray(productGrades) &&
-                      productGrades.map(item => (
-                        <Picker.Item
-                          key={item?.id || item?.name}
-                          label={item?.name || 'Unknown'}
-                          value={item?.id || ''}
-                        />
-                      ))}
-                  </Picker>
-                )}
-              </View>
+              <CustomDropdown
+                value={formData.product_grade_id}
+                onValueChange={value => {
+                  const selectedGrade = productGrades.find(g => g.id === value);
+                  setFormData(prev => ({
+                    ...prev,
+                    product_grade_id: value,
+                    product_grade_name: selectedGrade ? selectedGrade.name : ''
+                  }));
+                }}
+                items={productGrades || []}
+                placeholder={formData.product_grade_id || "Select a product grade"}
+                loading={productGradesLoading}
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
+              />
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Quantity</Text>
@@ -391,7 +406,7 @@ const EditOrder = ({route, navigation}) => {
               />
             </View>
             <View style={styles.row}>
-              <View style={[styles.inputGroup, {flex: 1, marginRight: w(2)}]}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: w(2) }]}>
                 <Text style={styles.label}>Date</Text>
                 <TouchableOpacity
                   onPress={() => setDatePickerOpen(true)}
@@ -399,14 +414,14 @@ const EditOrder = ({route, navigation}) => {
                   <Text
                     style={[
                       styles.dateInputText,
-                      !formData.order_date && {color: '#999'},
+                      !formData.order_date && { color: '#999' },
                     ]}>
                     {formData.order_date || 'Select a date'}
                   </Text>
                   <Icon name="calendar" size={f(2.5)} color="#F7374F" />
                 </TouchableOpacity>
               </View>
-              <View style={[styles.inputGroup, {flex: 1}]}>
+              <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Text style={styles.label}>Time</Text>
                 <TouchableOpacity
                   onPress={() => setTimePickerOpen(true)}
@@ -414,7 +429,7 @@ const EditOrder = ({route, navigation}) => {
                   <Text
                     style={[
                       styles.dateInputText,
-                      !formData.on_site_time && {color: '#999'},
+                      !formData.on_site_time && { color: '#999' },
                     ]}>
                     {formData.on_site_time || 'Select time'}
                   </Text>
@@ -442,7 +457,7 @@ const EditOrder = ({route, navigation}) => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Address</Text>
               <TextInput
-                style={[styles.input, {height: h(8)}]}
+                style={[styles.input, { height: h(8) }]}
                 value={formData.address}
                 onChangeText={text => handleChange('address', text)}
                 multiline
@@ -461,7 +476,7 @@ const EditOrder = ({route, navigation}) => {
                     style={[
                       styles.statusButtonText,
                       formData.order_type === '1' &&
-                        styles.statusButtonTextActive,
+                      styles.statusButtonTextActive,
                     ]}>
                     Pumping
                   </Text>
@@ -476,7 +491,7 @@ const EditOrder = ({route, navigation}) => {
                     style={[
                       styles.statusButtonText,
                       formData.order_type === '2' &&
-                        styles.statusButtonTextActive,
+                      styles.statusButtonTextActive,
                     ]}>
                     Dumping
                   </Text>
@@ -486,7 +501,7 @@ const EditOrder = ({route, navigation}) => {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Description</Text>
               <TextInput
-                style={[styles.input, {height: h(8)}]}
+                style={[styles.input, { height: h(8) }]}
                 value={formData.description || ''}
                 onChangeText={text => handleChange('description', text)}
                 multiline
@@ -529,8 +544,8 @@ const EditOrder = ({route, navigation}) => {
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
               style={styles.updateButton}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 0}}>
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}>
               <TouchableOpacity onPress={handleUpdate}>
                 <Text style={styles.updateButtonText}>Update Order</Text>
               </TouchableOpacity>
@@ -564,7 +579,7 @@ const styles = StyleSheet.create({
     borderRadius: w(3),
     padding: w(4),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -686,7 +701,7 @@ const styles = StyleSheet.create({
     width: '85%',
     maxHeight: h(60),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,

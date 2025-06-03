@@ -1,8 +1,8 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import {h, w, f} from 'walstar-rn-responsive';
+import { h, w, f } from 'walstar-rn-responsive';
 
 const Header = ({
   title,
@@ -12,15 +12,15 @@ const Header = ({
   rightIcon,
   onRightIconPress,
   gradientColors = ['#F7374F', '#FF6B6B'],
-   onBackPress,
-   style
+  onBackPress,
+  style
 }) => {
   return (
     <LinearGradient
       colors={gradientColors}
       style={[styles.header, style]}
-      start={{x: 0, y: 0}}
-      end={{x: 1, y: 0}}>
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}>
       <View style={styles.headerContent}>
         {showBackButton && (
           <TouchableOpacity
@@ -40,7 +40,7 @@ const Header = ({
           </TouchableOpacity>
         )}
 
-        {!rightIcon && showBackButton && <View style={{width: f(3.5)}} />}
+        {!rightIcon && showBackButton && <View style={{ width: f(3.5) }} />}
       </View>
     </LinearGradient>
   );
@@ -51,13 +51,14 @@ const styles = StyleSheet.create({
     paddingBottom: h(4),
     borderBottomLeftRadius: w(8),
     borderBottomRightRadius: w(8),
-    paddingTop: h(4.6),
-    paddingHorizontal: w(2),
+    paddingTop: Platform.OS === 'android' ? h(4.6) : 0,
+    paddingHorizontal: Platform.OS === 'android' ? w(2) : 0,
+    height: Platform.OS === 'ios' ? h(20) : 0,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    marginBottom: h(1),
+    // marginBottom: h(1),
     overflow: 'hidden',
   },
   headerContent: {
@@ -74,6 +75,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
     marginHorizontal: w(4),
+    paddingTop: h(5)
   },
   backButton: {
     padding: w(1),

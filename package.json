@@ -20,6 +20,7 @@
     "axios": "^1.9.0",
     "react": "19.0.0",
     "react-native": "0.78.1",
+    "react-native-calendars": "^1.1312.1",
     "react-native-date-picker": "^5.0.11",
     "react-native-gesture-handler": "^2.24.0",
     "react-native-linear-gradient": "^2.8.3",

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   StyleSheet,
@@ -17,10 +17,10 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import {h, w, f} from 'walstar-rn-responsive';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { h, w, f } from 'walstar-rn-responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchCustomerFormData,
   addCustomer,
@@ -94,8 +94,8 @@ const CustomDropdown = ({
                 <LinearGradient
                   colors={['#F7374F', '#FF6B6B']}
                   style={styles.dropdownHeader}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}>
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}>
                   <Text style={styles.dropdownTitle}>{placeholder}</Text>
                   <TouchableOpacity
                     onPress={handleClose}
@@ -142,14 +142,14 @@ const CustomDropdown = ({
                           style={[
                             styles.dropdownItem,
                             value === getValue(item) &&
-                              styles.dropdownItemSelected,
+                            styles.dropdownItemSelected,
                           ]}
                           onPress={() => handleSelect(item)}>
                           <Text
                             style={[
                               styles.dropdownItemText,
                               value === getValue(item) &&
-                                styles.dropdownItemTextSelected,
+                              styles.dropdownItemTextSelected,
                             ]}>
                             {getLabel(item)}
                           </Text>
@@ -181,12 +181,12 @@ const CustomDropdown = ({
   );
 };
 
-const AddCustomers = ({navigation}) => {
+const AddCustomers = ({ navigation }) => {
   const dispatch = useDispatch();
-  const {customerFormData = {}, customerFormDataLoading} = useSelector(
+  const { customerFormData = {}, customerFormDataLoading } = useSelector(
     state => state.order,
   );
-  const {addCustomerLoading, addCustomerSuccess, addCustomerError} =
+  const { addCustomerLoading, addCustomerSuccess, addCustomerError } =
     useSelector(state => state.order);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -261,7 +261,7 @@ const AddCustomers = ({navigation}) => {
   };
 
   const copyBillingToShipping = () => {
-    setShippingAddress({...billingAddress});
+    setShippingAddress({ ...billingAddress });
   };
 
   useEffect(() => {
@@ -295,7 +295,7 @@ const AddCustomers = ({navigation}) => {
 
     if (addCustomerError) {
       let errorMessage = '';
-      
+
       if (addCustomerError.errors) {
         errorMessage = Object.entries(addCustomerError.errors)
           .map(([field, message]) => `${field}: ${message}`)
@@ -320,8 +320,8 @@ const AddCustomers = ({navigation}) => {
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
 
@@ -333,8 +333,8 @@ const AddCustomers = ({navigation}) => {
         <LinearGradient
           colors={['#F8FAFF', '#F0F4FF']}
           // style={styles.container}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}>
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}>
           <Header
             title="Add New Customer"
             navigation={navigation}
@@ -507,7 +507,7 @@ const AddCustomers = ({navigation}) => {
                     label="Street"
                     value={billingAddress.street}
                     onChangeText={text =>
-                      setBillingAddress({...billingAddress, street: text})
+                      setBillingAddress({ ...billingAddress, street: text })
                     }
                     multiline
                   />
@@ -516,7 +516,7 @@ const AddCustomers = ({navigation}) => {
                     label="City"
                     value={billingAddress.city}
                     onChangeText={text =>
-                      setBillingAddress({...billingAddress, city: text})
+                      setBillingAddress({ ...billingAddress, city: text })
                     }
                   />
                   <FormField
@@ -524,7 +524,7 @@ const AddCustomers = ({navigation}) => {
                     label="State"
                     value={billingAddress.state}
                     onChangeText={text =>
-                      setBillingAddress({...billingAddress, state: text})
+                      setBillingAddress({ ...billingAddress, state: text })
                     }
                   />
                   <View style={styles.fieldContainer}>
@@ -558,7 +558,7 @@ const AddCustomers = ({navigation}) => {
                     label="Zip Code"
                     value={billingAddress.zipCode}
                     onChangeText={text =>
-                      setBillingAddress({...billingAddress, zipCode: text})
+                      setBillingAddress({ ...billingAddress, zipCode: text })
                     }
                     keyboardType="numeric"
                   />
@@ -596,7 +596,7 @@ const AddCustomers = ({navigation}) => {
                     label="Street"
                     value={shippingAddress.street}
                     onChangeText={text =>
-                      setShippingAddress({...shippingAddress, street: text})
+                      setShippingAddress({ ...shippingAddress, street: text })
                     }
                     multiline
                   />
@@ -605,7 +605,7 @@ const AddCustomers = ({navigation}) => {
                     label="City"
                     value={shippingAddress.city}
                     onChangeText={text =>
-                      setShippingAddress({...shippingAddress, city: text})
+                      setShippingAddress({ ...shippingAddress, city: text })
                     }
                   />
                   <FormField
@@ -613,7 +613,7 @@ const AddCustomers = ({navigation}) => {
                     label="State"
                     value={shippingAddress.state}
                     onChangeText={text =>
-                      setShippingAddress({...shippingAddress, state: text})
+                      setShippingAddress({ ...shippingAddress, state: text })
                     }
                   />
                   <View style={styles.fieldContainer}>
@@ -647,7 +647,7 @@ const AddCustomers = ({navigation}) => {
                     label="Zip Code"
                     value={shippingAddress.zipCode}
                     onChangeText={text =>
-                      setShippingAddress({...shippingAddress, zipCode: text})
+                      setShippingAddress({ ...shippingAddress, zipCode: text })
                     }
                     keyboardType="numeric"
                   />
@@ -662,8 +662,8 @@ const AddCustomers = ({navigation}) => {
               <LinearGradient
                 colors={['#4CAF50', '#66BB6A']}
                 style={styles.submitGradient}
-                start={{x: 0, y: 0}}
-                end={{x: 1, y: 1}}>
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}>
                 {addCustomerLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
@@ -711,7 +711,7 @@ const FormField = ({
     <View style={styles.inputContainer}>
       {unit && <Text style={styles.unitText}>{unit}</Text>}
       <TextInput
-        style={[styles.input, unit && {paddingLeft: w(8)}]}
+        style={[styles.input, unit && { paddingLeft: w(8) }]}
         value={value}
         onChangeText={onChangeText}
         {...props}
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     padding: w(4),
     marginBottom: h(2),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E0E0E0',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
     borderRadius: w(2),
     overflow: 'hidden',
     shadowColor: '#4CAF50',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     width: '85%',
     maxHeight: h(60),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
