@@ -42,8 +42,7 @@ const LoginScreen = ({navigation}) => {
       .unwrap()
       .then(res => {
         if (res.token) {
-          Alert.alert('Success', 'Login successful');
-          navigation.navigate('MainTabs');
+          navigation.replace('MainTabs');
         } else {
           Alert.alert('Login Failed', res.message || 'Invalid credentials');
         }

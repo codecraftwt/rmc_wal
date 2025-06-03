@@ -128,14 +128,14 @@ const MaterialInward = ({navigation}) => {
         </Text>
       </View> */}
 
-       <View style={styles.cardFooter}>
-        <Text style={styles.amountText}>Total Bill: ₹{item.total_bill_amount}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.amountText}>
+          Total Bill: ₹{item.total_bill_amount}
+        </Text>
         <View style={styles.paymentStatus}>
           <Icon
             name={
-              item.payment_status === '1' 
-                ? 'checkmark-circle'
-                : 'time-outline'
+              item.payment_status === '1' ? 'checkmark-circle' : 'time-outline'
             }
             size={f(2)}
             color={item.payment_status === '1' ? '#4CAF50' : '#FF9800'}
@@ -173,7 +173,14 @@ const MaterialInward = ({navigation}) => {
     <SafeAreaView style={{flex: 1}}>
       {/* <Header title="Material Inward" /> */}
 
-      <Header title="Material Inward" navigation={navigation} showBackButton='arrow-back'/>
+      <Header
+        title="Material Inward"
+        navigation={navigation}
+        showBackButton="arrow-back"
+        style={{
+          paddingTop: h(6.4),
+        }}
+      />
       <View style={styles.container}>
         <TextInput
           placeholder="Search by material, vehicle or description"
@@ -216,6 +223,10 @@ const MaterialInward = ({navigation}) => {
 };
 
 const styles = StyleSheet.create({
+  header: {
+    backgroundColor: 'blue',
+    paddingVertical: 10,
+  },
   container: {flex: 1, padding: 15},
   searchInput: {
     borderColor: '#ccc',
@@ -325,9 +336,9 @@ const styles = StyleSheet.create({
     marginTop: h(3),
   },
   seeAllContent: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
 });
 
 export default MaterialInward;

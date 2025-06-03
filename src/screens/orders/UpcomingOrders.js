@@ -23,6 +23,7 @@ import {
 import {useFocusEffect} from '@react-navigation/native';
 
 const OrderCard = ({order, navigation, onDelete}) => {
+  console.log("order_orderfromUpcoming",order)
   function convertTo12Hour(time24) {
     const [hourStr, minute] = time24.split(':');
     let hour = parseInt(hourStr, 10);
@@ -30,25 +31,14 @@ const OrderCard = ({order, navigation, onDelete}) => {
     hour = hour % 12;
     if (hour === 0) hour = 12;
     return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
-
-
   }
-    // order.map(order.customer_details) kadre stone
-  console.log("orderorderorderorder", order)
-
-  // const kkkk =  order
-  // .filter(o => o.customer_details === "kadre stone")
-  // .forEach(o => console.log("kadre stone", o));
-
-  // console.log("kkkkkkkkkkkkkkkk", kkkk)
-
   return (
     <View
       style={[
         styles.card,
         {
           borderLeftWidth: 4,
-          borderLeftColor: order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
+          borderLeftColor: order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
         },
       ]}>
       <View style={styles.cardHeader}>
@@ -86,7 +76,6 @@ const OrderCard = ({order, navigation, onDelete}) => {
             <Icon name="calendar-outline" size={f(2.2)} color="#4A90E2" />
           </View>
           <Text style={styles.detailText}>
-            {/* {order.date} • {order.onsiteTime} */}
             {order.date} • {convertTo12Hour(order.onsiteTime)}
           </Text>
         </View>
@@ -106,19 +95,19 @@ const OrderCard = ({order, navigation, onDelete}) => {
               styles.statusBadge,
               {
                 backgroundColor:
-                  order.confirm === 'confirmed'
+                  order.status === 'confirmed'
                     ? 'rgba(76, 175, 80, 0.1)'
                     : 'rgba(255, 193, 7, 0.1)',
                 borderColor:
-                  order.confirm === 1 ? '#4CAF50' : '#FFC107',
+                  order.status === 'confirmed' ? '#4CAF50' : '#FFC107',
               },
             ]}>
             <Text
               style={[
                 styles.statusText,
-                {color: order.confirm === 'confirmed' ? '#4CAF50' : '#FFA000'},
+                {color: order.status === 'confirmed' ? '#4CAF50' : '#FFA000'},
               ]}>
-              {order.confirm === 'confirmed' ? '✓ Confirmed' : '⌛ Pending'}
+              {order.status === 'confirmed' ? '✓ Confirmed' : '⌛ Pending'}
             </Text>
           </View>
         </View>
@@ -178,7 +167,7 @@ const UpcomingOrders = ({navigation, route}) => {
   }, [navigation]);
 
   const transformOrder = order => {
-    console.log('Transforming order:', order); // Debug log
+    console.log('Transforming order:', order); 
     return {
       id: order.id,
       customer_details: order.company || 'Unknown Customer',
@@ -189,16 +178,16 @@ const UpcomingOrders = ({navigation, route}) => {
       address: order.address || 'No address',
       type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
-      // status:
-        confirm:  order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
-      // confirm: order.confirm === 1 ? 'confirmed' : 'pending', // Keep the original confirm value
+      status:
+        order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
+      confirm: order.confirm,
     };
   };
 
   let transformedOrders = [];
   if (upcomingOrders && upcomingOrders.data) {
     transformedOrders = upcomingOrders.data.map(transformOrder);
-    console.log('Transformed Orders:', transformedOrders); // Debug log
+    console.log('Transformed Orders:', transformedOrders);
   }
 
   const filteredOrders = transformedOrders.filter(order => {

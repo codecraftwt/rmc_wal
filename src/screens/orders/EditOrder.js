@@ -9,6 +9,8 @@ import {
   Alert,
   BackHandler,
   ActivityIndicator,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {h, w, f} from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,10 +20,165 @@ import {useDispatch, useSelector} from 'react-redux';
 import {
   editUpcomingOrder,
   fetchProductGrades,
+  fetchCustomers
 } from '../../../Redux/slices/orderSlice';
 import {Picker} from '@react-native-picker/picker';
 import DatePicker from 'react-native-date-picker';
 import Icon from 'react-native-vector-icons/Ionicons';
+
+const CustomDropdown = ({
+  value,
+  onValueChange,
+  items,
+  placeholder,
+  loading,
+  style,
+  getLabel = item => item.name,
+  getValue = item => item.id,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredItems, setFilteredItems] = useState(items || []);
+
+  useEffect(() => {
+    if (value && items) {
+      const selectedItem = items.find(item => getValue(item) === value);
+      setSelectedLabel(selectedItem ? getLabel(selectedItem) : placeholder);
+    } else {
+      setSelectedLabel(placeholder);
+    }
+  }, [value, items, placeholder, getLabel, getValue]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredItems(items || []);
+    } else {
+      const filtered = (items || []).filter(item =>
+        getLabel(item).toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredItems(filtered);
+    }
+  }, [searchQuery, items, getLabel]);
+
+  const handleSelect = item => {
+    onValueChange(getValue(item));
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  return (
+    <View style={[styles.customDropdownContainer, style]}>
+      <TouchableOpacity
+        style={styles.customDropdownButton}
+        onPress={() => setIsOpen(true)}>
+        <Text style={styles.customDropdownButtonText}>{selectedLabel}</Text>
+        <Icon name="chevron-down" size={f(2.5)} color="#F7374F" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClose}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownContent}>
+                <LinearGradient
+                  colors={['#F7374F', '#FF6B6B']}
+                  style={styles.dropdownHeader}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}>
+                  <Text style={styles.dropdownTitle}>{placeholder}</Text>
+                  <TouchableOpacity
+                    onPress={handleClose}
+                    style={styles.closeButton}>
+                    <Icon name="close" size={f(2.5)} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </LinearGradient>
+
+                <View style={styles.searchContainer}>
+                  <View style={styles.searchInputContainer}>
+                    <Icon
+                      name="search"
+                      size={f(2.5)}
+                      color="#666"
+                      style={styles.searchIcon}
+                    />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholderTextColor="#999"
+                    />
+                    {searchQuery ? (
+                      <TouchableOpacity
+                        onPress={() => setSearchQuery('')}
+                        style={styles.clearSearchButton}>
+                        <Icon name="close-circle" size={f(2.5)} color="#666" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#F7374F" />
+                  </View>
+                ) : (
+                  <ScrollView style={styles.dropdownList}>
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map(item => (
+                        <TouchableOpacity
+                          key={getValue(item)}
+                          style={[
+                            styles.dropdownItem,
+                            value === getValue(item) &&
+                              styles.dropdownItemSelected,
+                          ]}
+                          onPress={() => handleSelect(item)}>
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              value === getValue(item) &&
+                                styles.dropdownItemTextSelected,
+                            ]}>
+                            {getLabel(item)}
+                          </Text>
+                          {value === getValue(item) && (
+                            <Icon
+                              name="checkmark"
+                              size={f(2.5)}
+                              color="#F7374F"
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <View style={styles.noResultsContainer}>
+                        <Icon name="search-outline" size={f(5)} color="#999" />
+                        <Text style={styles.noResultsText}>
+                          No results found
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
+  );
+};
 
 const EditOrder = ({route, navigation}) => {
   const dispatch = useDispatch();
@@ -33,7 +190,7 @@ const EditOrder = ({route, navigation}) => {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
 
-  const {productGrades, productGradesLoading} = useSelector(
+  const {productGrades, productGradesLoading, customers, customersLoading} = useSelector(
     state => state.order,
   );
 
@@ -41,7 +198,6 @@ const EditOrder = ({route, navigation}) => {
   const [formData, setFormData] = useState({
     customer_id: order.company || '',
     customer_details: order.customer_details || '',
-    // product_grade_id: order.product_name || order.productGrade || '',
     product_grade_id: order.productGrade || '',
     quantity: order.quantity?.replace('.00 kg', '') || '',
     order_date: order.order_date || order.date || '',
@@ -53,13 +209,12 @@ const EditOrder = ({route, navigation}) => {
     order_type:
       order.order_type || (order.type === 'Pumping' ? '1' : '2') || '',
     description: order.description || '',
-    // status: order.status === 1 ? 'confirmed' : '0',
-    // confirm: order.status === 1 ? 1 : 0,
     confirm: order.confirm === "confirmed" ? "1" : "0",
   });
 
   useEffect(() => {
     dispatch(fetchProductGrades());
+    dispatch(fetchCustomers());
   }, [dispatch]);
 
   useEffect(() => {
@@ -74,10 +229,21 @@ const EditOrder = ({route, navigation}) => {
     return () => backHandler.remove();
   }, [navigation]);
 
+  const handleCustomerSelect = customerId => {
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    if (selectedCustomer) {
+      setFormData(prev => ({
+        ...prev,
+        customer_id: selectedCustomer.id,
+        customer_details: selectedCustomer.name,
+      }));
+    }
+  };
+
   const handleUpdate = async () => {
     try {
       if (
-        !formData.customer_details ||
+        !formData.customer_id ||
         !formData.product_grade_id ||
         !formData.quantity ||
         !formData.order_date ||
@@ -90,7 +256,7 @@ const EditOrder = ({route, navigation}) => {
       }
       const formattedData = {
         ...formData,
-        customer_details: formData.customer_details?.trim(),
+        customer_details: formData.customer_id?.trim(),
         quantity: formData.quantity?.toString().replace(/[^0-9.]/g, ''),
         order_date: formData.order_date?.trim(),
         on_site_time: formData.on_site_time?.trim(),
@@ -148,7 +314,6 @@ const EditOrder = ({route, navigation}) => {
     handleChange('on_site_time', formattedTime);
   };
 
-
   useEffect(() => {
   console.log('Updated formData:', formData,);
 }, [formData]);
@@ -171,10 +336,15 @@ const EditOrder = ({route, navigation}) => {
           <View style={styles.card}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Company Name</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.customer_details}
-                onChangeText={text => handleChange('customer_details', text)}
+              <CustomDropdown
+                value={formData.customer_id}
+                onValueChange={handleCustomerSelect}
+                items={customers || []}
+                placeholder="Select a company"
+                loading={customersLoading}
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
               />
             </View>
             <View style={styles.inputGroup}>
@@ -192,7 +362,6 @@ const EditOrder = ({route, navigation}) => {
                     }
                     style={styles.picker}
                     dropdownIconColor="#F7374F">
-                    {/* <Picker.Item label="Select a product grade" value="" /> */}
                     <Picker.Item
                       label={
                         formData.product_grade_id || 'Select a product grade'
@@ -224,12 +393,6 @@ const EditOrder = ({route, navigation}) => {
             <View style={styles.row}>
               <View style={[styles.inputGroup, {flex: 1, marginRight: w(2)}]}>
                 <Text style={styles.label}>Date</Text>
-                {/* <TextInput
-                  style={styles.input}
-                  value={formData.order_date}
-                  onChangeText={text => handleChange('order_date', text)}
-                  placeholder="YYYY-MM-DD"
-                /> */}
                 <TouchableOpacity
                   onPress={() => setDatePickerOpen(true)}
                   style={styles.dateInput}>
@@ -245,12 +408,6 @@ const EditOrder = ({route, navigation}) => {
               </View>
               <View style={[styles.inputGroup, {flex: 1}]}>
                 <Text style={styles.label}>Time</Text>
-                {/* <TextInput
-                  style={styles.input}
-                  value={formData.on_site_time}
-                  onChangeText={text => handleChange('on_site_time', text)}
-                  placeholder="HH:MM AM/PM"
-                /> */}
                 <TouchableOpacity
                   onPress={() => setTimePickerOpen(true)}
                   style={styles.dateInput}>
@@ -368,39 +525,6 @@ const EditOrder = ({route, navigation}) => {
                 </TouchableOpacity>
               </View>
             </View>
-            {/* <TouchableOpacity
-  style={[
-    styles.statusButton,
-    formData.confirm === 1 && styles.statusButtonActive,
-  ]}
-  onPress={() => handleChange('confirm', 1)} // pass number 1
->
-  <Text
-    style={[
-      styles.statusButtonText,
-      formData.confirm === 1 && styles.statusButtonTextActive,
-    ]}
-  >
-    Confirmed
-  </Text>
-</TouchableOpacity>
-
-<TouchableOpacity
-  style={[
-    styles.statusButton,
-    formData.confirm === 0 && styles.statusButtonActive,
-  ]}
-  onPress={() => handleChange('confirm', 0)} // pass number 0
->
-  <Text
-    style={[
-      styles.statusButtonText,
-      formData.confirm === 0 && styles.statusButtonTextActive,
-    ]}
-  >
-    Pending
-  </Text>
-</TouchableOpacity> */}
 
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
@@ -532,6 +656,119 @@ const styles = StyleSheet.create({
   dateInputText: {
     fontSize: f(2),
     color: '#333',
+  },
+  customDropdownContainer: {
+    width: '100%',
+  },
+  customDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    padding: w(3),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  customDropdownButtonText: {
+    fontSize: f(2),
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownContent: {
+    backgroundColor: 'white',
+    borderRadius: w(3),
+    width: '85%',
+    maxHeight: h(60),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(4),
+    borderTopLeftRadius: w(3),
+    borderTopRightRadius: w(3),
+  },
+  dropdownTitle: {
+    fontSize: f(2.4),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  closeButton: {
+    padding: w(1),
+  },
+  searchContainer: {
+    padding: w(3),
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    paddingHorizontal: w(3),
+    paddingVertical: w(2),
+  },
+  searchIcon: {
+    marginRight: w(2),
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: f(2),
+    color: '#333',
+    padding: w(2),
+    fontFamily: 'Poppins-Regular',
+  },
+  clearSearchButton: {
+    padding: w(1),
+  },
+  dropdownList: {
+    maxHeight: h(45),
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(3),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#FFF5F6',
+  },
+  dropdownItemText: {
+    fontSize: f(2),
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
+  },
+  dropdownItemTextSelected: {
+    color: '#F7374F',
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  noResultsContainer: {
+    padding: w(5),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    fontSize: f(2),
+    color: '#666',
+    marginTop: h(2),
+    fontFamily: 'Poppins-Regular',
   },
 });
 export default EditOrder;

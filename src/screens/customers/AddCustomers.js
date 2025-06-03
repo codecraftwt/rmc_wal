@@ -11,14 +11,183 @@ import {
   BackHandler,
   KeyboardAvoidingView,
   Platform,
+  TouchableNativeFeedback,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {h, w, f} from 'walstar-rn-responsive';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  fetchCustomerFormData,
+  addCustomer,
+  resetAddCustomerState,
+} from '../../../Redux/slices/orderSlice';
+
+const CustomDropdown = ({
+  value,
+  onValueChange,
+  items,
+  placeholder,
+  loading,
+  style,
+  getLabel = item => item.long_name,
+  getValue = item => item.country_id,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredItems, setFilteredItems] = useState(items || []);
+
+  useEffect(() => {
+    if (value && items) {
+      const selectedItem = items.find(item => getValue(item) === value);
+      setSelectedLabel(selectedItem ? getLabel(selectedItem) : placeholder);
+    } else {
+      setSelectedLabel(placeholder);
+    }
+  }, [value, items, placeholder, getLabel, getValue]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredItems(items || []);
+    } else {
+      const filtered = (items || []).filter(item =>
+        getLabel(item).toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredItems(filtered);
+    }
+  }, [searchQuery, items, getLabel]);
+
+  const handleSelect = item => {
+    onValueChange(getValue(item));
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  return (
+    <View style={[styles.customDropdownContainer, style]}>
+      <TouchableOpacity
+        style={styles.customDropdownButton}
+        onPress={() => setIsOpen(true)}>
+        <Text style={styles.customDropdownButtonText}>{selectedLabel}</Text>
+        <Icon name="chevron-down" size={f(2.5)} color="#F7374F" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClose}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownContent}>
+                <LinearGradient
+                  colors={['#F7374F', '#FF6B6B']}
+                  style={styles.dropdownHeader}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}>
+                  <Text style={styles.dropdownTitle}>{placeholder}</Text>
+                  <TouchableOpacity
+                    onPress={handleClose}
+                    style={styles.closeButton}>
+                    <Icon name="close" size={f(2.5)} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </LinearGradient>
+
+                <View style={styles.searchContainer}>
+                  <View style={styles.searchInputContainer}>
+                    <Icon
+                      name="search"
+                      size={f(2.5)}
+                      color="#666"
+                      style={styles.searchIcon}
+                    />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholderTextColor="#999"
+                    />
+                    {searchQuery ? (
+                      <TouchableOpacity
+                        onPress={() => setSearchQuery('')}
+                        style={styles.clearSearchButton}>
+                        <Icon name="close-circle" size={f(2.5)} color="#666" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#F7374F" />
+                  </View>
+                ) : (
+                  <ScrollView style={styles.dropdownList}>
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map(item => (
+                        <TouchableOpacity
+                          key={getValue(item)}
+                          style={[
+                            styles.dropdownItem,
+                            value === getValue(item) &&
+                              styles.dropdownItemSelected,
+                          ]}
+                          onPress={() => handleSelect(item)}>
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              value === getValue(item) &&
+                                styles.dropdownItemTextSelected,
+                            ]}>
+                            {getLabel(item)}
+                          </Text>
+                          {value === getValue(item) && (
+                            <Icon
+                              name="checkmark"
+                              size={f(2.5)}
+                              color="#F7374F"
+                            />
+                          )}
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <View style={styles.noResultsContainer}>
+                        <Icon name="search-outline" size={f(5)} color="#999" />
+                        <Text style={styles.noResultsText}>
+                          No results found
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
+  );
+};
 
 const AddCustomers = ({navigation}) => {
+  const dispatch = useDispatch();
+  const {customerFormData = {}, customerFormDataLoading} = useSelector(
+    state => state.order,
+  );
+  const {addCustomerLoading, addCustomerSuccess, addCustomerError} =
+    useSelector(state => state.order);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [company, setCompany] = useState('');
@@ -29,6 +198,8 @@ const AddCustomers = ({navigation}) => {
   const [country, setcountry] = useState('');
   const [website, setWebsite] = useState('');
   const [groups, setGroups] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [language, setLanguage] = useState('');
   const [loading, setLoading] = useState(false);
   const [billingExpanded, setBillingExpanded] = useState(false);
   const [shippingExpanded, setShippingExpanded] = useState(false);
@@ -57,12 +228,36 @@ const AddCustomers = ({navigation}) => {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert('Success', 'Customer added successfully!');
-      navigation.goBack();
-    }, 1500);
+    if (addCustomerLoading) {
+      return;
+    }
+
+    const customerData = {
+      company,
+      vat: gst,
+      phonenumber: phone,
+      country,
+      city,
+      zip: zipCode,
+      state,
+      address,
+      website,
+      default_currency: currency,
+      default_language: language,
+      billing_street: billingAddress.street,
+      billing_city: billingAddress.city,
+      billing_state: billingAddress.state,
+      billing_zip: billingAddress.zipCode,
+      billing_country: billingAddress.country,
+      shipping_street: shippingAddress.street,
+      shipping_city: shippingAddress.city,
+      shipping_state: shippingAddress.state,
+      shipping_zip: shippingAddress.zipCode,
+      shipping_country: shippingAddress.country,
+      groups_in: groups ? [groups] : [],
+    };
+
+    dispatch(addCustomer(customerData));
   };
 
   const copyBillingToShipping = () => {
@@ -80,6 +275,45 @@ const AddCustomers = ({navigation}) => {
     );
     return () => backHandler.remove();
   }, [navigation]);
+
+  useEffect(() => {
+    dispatch(fetchCustomerFormData());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (addCustomerSuccess) {
+      Alert.alert('Success', 'Customer added successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            dispatch(resetAddCustomerState());
+            navigation.goBack();
+          },
+        },
+      ]);
+    }
+
+    if (addCustomerError) {
+      let errorMessage = '';
+      
+      if (addCustomerError.errors) {
+        errorMessage = Object.entries(addCustomerError.errors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n\n');
+      } else {
+        errorMessage = addCustomerError.toString();
+      }
+
+      Alert.alert('Validation Error', errorMessage, [
+        {
+          text: 'OK',
+          onPress: () => {
+            dispatch(resetAddCustomerState());
+          },
+        },
+      ]);
+    }
+  }, [addCustomerSuccess, addCustomerError]);
 
   return (
     <>
@@ -155,24 +389,96 @@ const AddCustomers = ({navigation}) => {
                 onChangeText={setZipCode}
                 keyboardType="numeric"
               />
-              <FormField
-                icon="globe-outline"
-                label="Country"
-                value={country}
-                onChangeText={setcountry}
-              />
+              <View style={styles.fieldContainer}>
+                <View style={styles.fieldLabel}>
+                  <Icon
+                    name="globe-outline"
+                    size={f(2.5)}
+                    color="#F7374F"
+                    style={styles.fieldIcon}
+                  />
+                  <Text style={styles.labelText}>Country</Text>
+                </View>
+                <CustomDropdown
+                  value={country}
+                  onValueChange={setcountry}
+                  items={customerFormData?.countries || []}
+                  placeholder="Select a country"
+                  loading={customerFormDataLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => item.long_name} //how to display each item means display by name
+                  getValue={item => item.country_id}//what value to return on selection means save id
+                />
+              </View>
               <FormField
                 icon="link"
                 label="Website"
                 value={website}
                 onChangeText={setWebsite}
               />
-              <FormField
-                icon="people"
-                label="Groups"
-                value={groups}
-                onChangeText={setGroups}
-              />
+              <View style={styles.fieldContainer}>
+                <View style={styles.fieldLabel}>
+                  <Icon
+                    name="people"
+                    size={f(2.5)}
+                    color="#F7374F"
+                    style={styles.fieldIcon}
+                  />
+                  <Text style={styles.labelText}>Groups</Text>
+                </View>
+                <CustomDropdown
+                  value={groups}
+                  onValueChange={setGroups}
+                  items={customerFormData?.customers_groups || []}
+                  placeholder="Select a group"
+                  loading={customerFormDataLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => item.name}
+                  getValue={item => item.id}
+                />
+              </View>
+              <View style={styles.fieldContainer}>
+                <View style={styles.fieldLabel}>
+                  <Icon
+                    name="cash"
+                    size={f(2.5)}
+                    color="#F7374F"
+                    style={styles.fieldIcon}
+                  />
+                  <Text style={styles.labelText}>Currency</Text>
+                </View>
+                <CustomDropdown
+                  value={currency}
+                  onValueChange={setCurrency}
+                  items={customerFormData?.currencies || []}
+                  placeholder="Select a currency"
+                  loading={customerFormDataLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => `${item.name} (${item.symbol})`}
+                  getValue={item => item.id}
+                />
+              </View>
+              <View style={styles.fieldContainer}>
+                <View style={styles.fieldLabel}>
+                  <Icon
+                    name="language"
+                    size={f(2.5)}
+                    color="#F7374F"
+                    style={styles.fieldIcon}
+                  />
+                  <Text style={styles.labelText}>Language</Text>
+                </View>
+                <CustomDropdown
+                  value={language}
+                  onValueChange={setLanguage}
+                  items={customerFormData?.languages || []}
+                  placeholder="Select a language"
+                  loading={customerFormDataLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => item.charAt(0).toUpperCase() + item.slice(1)}
+                  getValue={item => item}
+                />
+              </View>
             </View>
 
             {/* Billing and Shipping Address Section */}
@@ -221,14 +527,32 @@ const AddCustomers = ({navigation}) => {
                       setBillingAddress({...billingAddress, state: text})
                     }
                   />
-                  <FormField
-                    icon="flag"
-                    label="Country"
-                    value={billingAddress.country}
-                    onChangeText={text =>
-                      setBillingAddress({...billingAddress, country: text})
-                    }
-                  />
+                  <View style={styles.fieldContainer}>
+                    <View style={styles.fieldLabel}>
+                      <Icon
+                        name="flag"
+                        size={f(2.5)}
+                        color="#F7374F"
+                        style={styles.fieldIcon}
+                      />
+                      <Text style={styles.labelText}>Country</Text>
+                    </View>
+                    <CustomDropdown
+                      value={billingAddress.country}
+                      onValueChange={value =>
+                        setBillingAddress({
+                          ...billingAddress,
+                          country: value,
+                        })
+                      }
+                      items={customerFormData?.countries || []}
+                      placeholder="Select a country"
+                      loading={customerFormDataLoading}
+                      style={styles.pickerContainer}
+                      getLabel={item => item.long_name}
+                      getValue={item => item.country_id}
+                    />
+                  </View>
                   <FormField
                     icon="code"
                     label="Zip Code"
@@ -292,14 +616,32 @@ const AddCustomers = ({navigation}) => {
                       setShippingAddress({...shippingAddress, state: text})
                     }
                   />
-                  <FormField
-                    icon="flag"
-                    label="Country"
-                    value={shippingAddress.country}
-                    onChangeText={text =>
-                      setShippingAddress({...shippingAddress, country: text})
-                    }
-                  />
+                  <View style={styles.fieldContainer}>
+                    <View style={styles.fieldLabel}>
+                      <Icon
+                        name="flag"
+                        size={f(2.5)}
+                        color="#F7374F"
+                        style={styles.fieldIcon}
+                      />
+                      <Text style={styles.labelText}>Country</Text>
+                    </View>
+                    <CustomDropdown
+                      value={shippingAddress.country}
+                      onValueChange={value =>
+                        setShippingAddress({
+                          ...shippingAddress,
+                          country: value,
+                        })
+                      }
+                      items={customerFormData?.countries || []}
+                      placeholder="Select a country"
+                      loading={customerFormDataLoading}
+                      style={styles.pickerContainer}
+                      getLabel={item => item.long_name}
+                      getValue={item => item.country_id}
+                    />
+                  </View>
                   <FormField
                     icon="code"
                     label="Zip Code"
@@ -316,13 +658,13 @@ const AddCustomers = ({navigation}) => {
             <TouchableOpacity
               style={styles.submitButton}
               onPress={handleSubmit}
-              disabled={loading}>
+              disabled={addCustomerLoading}>
               <LinearGradient
                 colors={['#4CAF50', '#66BB6A']}
                 style={styles.submitGradient}
                 start={{x: 0, y: 0}}
                 end={{x: 1, y: 1}}>
-                {loading ? (
+                {addCustomerLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
@@ -496,7 +838,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
-    marginBottom:h(14.4)
+    marginBottom: h(14.4),
   },
   submitGradient: {
     flexDirection: 'row',
@@ -512,6 +854,136 @@ const styles = StyleSheet.create({
   },
   submitIcon: {
     marginLeft: w(1),
+  },
+  pickerContainer: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    overflow: 'hidden',
+  },
+  picker: {
+    height: h(6),
+    width: '100%',
+    color: '#333',
+  },
+  loadingContainer: {
+    height: h(6),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  customDropdownContainer: {
+    width: '100%',
+  },
+  customDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    padding: w(3),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  customDropdownButtonText: {
+    fontSize: f(2),
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownContent: {
+    backgroundColor: 'white',
+    borderRadius: w(3),
+    width: '85%',
+    maxHeight: h(60),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(4),
+    borderTopLeftRadius: w(3),
+    borderTopRightRadius: w(3),
+  },
+  dropdownTitle: {
+    fontSize: f(2.4),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  closeButton: {
+    padding: w(1),
+  },
+  searchContainer: {
+    padding: w(3),
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    paddingHorizontal: w(3),
+    paddingVertical: w(2),
+  },
+  searchIcon: {
+    marginRight: w(2),
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: f(2),
+    color: '#333',
+    padding: w(2),
+    fontFamily: 'Poppins-Regular',
+  },
+  clearSearchButton: {
+    padding: w(1),
+  },
+  dropdownList: {
+    maxHeight: h(45),
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(3),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#FFF5F6',
+  },
+  dropdownItemText: {
+    fontSize: f(2),
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
+  },
+  dropdownItemTextSelected: {
+    color: '#F7374F',
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  noResultsContainer: {
+    padding: w(5),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    fontSize: f(2),
+    color: '#666',
+    marginTop: h(2),
+    fontFamily: 'Poppins-Regular',
   },
 });
 

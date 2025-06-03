@@ -173,6 +173,56 @@ export const fetchCustomers = createAsyncThunk(
   }
 );
 
+export const fetchCustomerFormData = createAsyncThunk(
+  'order/fetchCustomerFormData',
+  async (_, {rejectWithValue}) => {
+    try {
+      const response = await AxiosInstance.get('/get_customer_form_data_api');
+      
+      if (response.data.status) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to fetch form data');
+      }
+    } catch (error) {
+      console.error('Customer Form Data API Error:', error);
+      return rejectWithValue(error.message || 'Network Error');
+    }
+  }
+);
+
+export const addCustomer = createAsyncThunk(
+  'order/addCustomer',
+  async (customerData, {rejectWithValue}) => {
+    try {
+      const formData = new FormData();
+      
+      // Append all customer data to formData
+      Object.entries(customerData).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      const response = await AxiosInstance.post('/add_customers_api', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.status) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.data);
+      }
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
 const initialState = {
   loading: false,
   success: false,
@@ -188,6 +238,17 @@ const initialState = {
   customers: [],
   customersLoading: false,
   customersError: null,
+  customerFormData: {
+    customers_groups: [],
+    currencies: [],
+    countries: [],
+    languages: []
+  },
+  customerFormDataLoading: false,
+  customerFormDataError: null,
+  addCustomerLoading: false,
+  addCustomerSuccess: false,
+  addCustomerError: null,
 };
 
 const orderSlice = createSlice({
@@ -198,6 +259,11 @@ const orderSlice = createSlice({
       state.loading = false;
       state.success = false;
       state.error = null;
+    },
+    resetAddCustomerState: state => {
+      state.addCustomerLoading = false;
+      state.addCustomerSuccess = false;
+      state.addCustomerError = null;
     },
   },
   extraReducers: builder => {
@@ -292,9 +358,43 @@ const orderSlice = createSlice({
         state.customersLoading = false;
         state.customersError = action.payload;
       });
+
+    // Add new cases for customer form data
+    builder
+      .addCase(fetchCustomerFormData.pending, state => {
+        state.customerFormDataLoading = true;
+        state.customerFormDataError = null;
+      })
+      .addCase(fetchCustomerFormData.fulfilled, (state, action) => {
+        state.customerFormDataLoading = false;
+        state.customerFormData = action.payload;
+        state.customerFormDataError = null;
+      })
+      .addCase(fetchCustomerFormData.rejected, (state, action) => {
+        state.customerFormDataLoading = false;
+        state.customerFormDataError = action.payload;
+      });
+
+    // Add Customer cases
+    builder
+      .addCase(addCustomer.pending, state => {
+        state.addCustomerLoading = true;
+        state.addCustomerSuccess = false;
+        state.addCustomerError = null;
+      })
+      .addCase(addCustomer.fulfilled, (state, action) => {
+        state.addCustomerLoading = false;
+        state.addCustomerSuccess = true;
+        state.addCustomerError = null;
+      })
+      .addCase(addCustomer.rejected, (state, action) => {
+        state.addCustomerLoading = false;
+        state.addCustomerSuccess = false;
+        state.addCustomerError = action.payload;
+      });
   },
 });
 
-export const {resetOrderState} = orderSlice.actions;
+export const {resetOrderState, resetAddCustomerState} = orderSlice.actions;
 
 export default orderSlice.reducer;

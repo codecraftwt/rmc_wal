@@ -9,16 +9,18 @@ import {
   Alert,
   BackHandler,
   ActivityIndicator,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { h, w, f } from 'walstar-rn-responsive';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {h, w, f} from 'walstar-rn-responsive';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import DatePicker from 'react-native-date-picker';
 import {useDispatch, useSelector} from 'react-redux';
 import {
-  addUpcomingOrder, 
+  addUpcomingOrder,
   resetAddOrderState,
 } from '../../../Redux/slices/addOrderSlice';
 import {
@@ -26,6 +28,150 @@ import {
   fetchCustomers,
 } from '../../../Redux/slices/orderSlice';
 import {Picker} from '@react-native-picker/picker';
+
+const CustomDropdown = ({
+  value,
+  onValueChange,
+  items,
+  placeholder,
+  loading,
+  style,
+  getLabel = item => item.name,
+  getValue = item => item.id,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredItems, setFilteredItems] = useState(items || []);
+
+  useEffect(() => {
+    if (value && items) {
+      const selectedItem = items.find(item => getValue(item) === value);
+      setSelectedLabel(selectedItem ? getLabel(selectedItem) : placeholder);
+    } else {
+      setSelectedLabel(placeholder);
+    }
+  }, [value, items, placeholder, getLabel, getValue]);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredItems(items || []);
+    } else {
+      const filtered = (items || []).filter(item =>
+        getLabel(item).toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+      setFilteredItems(filtered);
+    }
+  }, [searchQuery, items, getLabel]);
+
+  const handleSelect = item => {
+    onValueChange(getValue(item));
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setSearchQuery('');
+  };
+
+  return (
+    <View style={[styles.customDropdownContainer, style]}>
+      <TouchableOpacity
+        style={styles.customDropdownButton}
+        onPress={() => setIsOpen(true)}>
+        <Text style={styles.customDropdownButtonText}>{selectedLabel}</Text>
+        <Icon name="chevron-down" size={f(2.5)} color="#F7374F" />
+      </TouchableOpacity>
+
+      <Modal
+        visible={isOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleClose}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownContent}>
+                <LinearGradient
+                  colors={['#F7374F', '#FF6B6B']}
+                  style={styles.dropdownHeader}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}>
+                  <Text style={styles.dropdownTitle}>{placeholder}</Text>
+                  <TouchableOpacity
+                    onPress={handleClose}
+                    style={styles.closeButton}>
+                    <Icon name="close" size={f(2.5)} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </LinearGradient>
+                <View style={styles.searchContainer}>
+                  <View style={styles.searchInputContainer}>
+                    <Icon
+                      name="search"
+                      size={f(2.5)}
+                      color="#666"
+                      style={styles.searchIcon}
+                    />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholderTextColor="#999"
+                    />
+                    {searchQuery ? (
+                      <TouchableOpacity
+                        onPress={() => setSearchQuery('')}
+                        style={styles.clearSearchButton}>
+                        <Icon name="close-circle" size={f(2.5)} color="#666" />
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#F7374F" />
+                  </View>
+                ) : (
+                  <ScrollView style={styles.dropdownList}>
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map(item => (
+                        <TouchableOpacity
+                          key={getValue(item)}
+                          style={[
+                            styles.dropdownItem,
+                            value === getValue(item) &&
+                              styles.dropdownItemSelected,
+                          ]}
+                          onPress={() => handleSelect(item)}>
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              value === getValue(item) &&
+                                styles.dropdownItemTextSelected,
+                            ]}>
+                            {getLabel(item)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    ) : (
+                      <View style={styles.noResultsContainer}>
+                        <Text style={styles.noResultsText}>
+                          No results found
+                        </Text>
+                      </View>
+                    )}
+                  </ScrollView>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
+  );
+};
 
 const AddOrder = ({navigation}) => {
   const dispatch = useDispatch();
@@ -47,6 +193,7 @@ const AddOrder = ({navigation}) => {
     order_type: '',
     description: '',
     confirm: '',
+    // confirm: '0',
   });
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -97,13 +244,13 @@ const AddOrder = ({navigation}) => {
     }));
   };
 
-  const handleCustomerSelect = (customerId) => {
+  const handleCustomerSelect = customerId => {
     const selectedCustomer = customers.find(c => c.id === customerId);
     if (selectedCustomer) {
       setFormData(prev => ({
         ...prev,
         customer_id: selectedCustomer.id,
-        customer_name: selectedCustomer.id.toString(),
+        customer_name: selectedCustomer.name,
         address: selectedCustomer.address,
       }));
     }
@@ -128,17 +275,24 @@ const AddOrder = ({navigation}) => {
   };
 
   const handleSubmit = () => {
-    if (!formData.customer_name || !formData.product_grade || !formData.quantity || 
-        !formData.date || !formData.on_site_time || !formData.address || !formData.order_type) {
+    if (
+      !formData.customer_name ||
+      !formData.product_grade ||
+      !formData.quantity ||
+      !formData.date ||
+      !formData.on_site_time ||
+      !formData.address ||
+      !formData.order_type
+    ) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-
+console.log("formData_formdata", formData)
     // Convert order type to numeric value
     const orderTypeValue = formData.order_type === 'Pumping' ? '1' : '2';
 
     const submissionData = {
-      customer_name: formData.customer_name,
+      customer_name: formData.customer_id,
       product_grade: formData.product_grade,
       quantity: formData.quantity?.toString().replace(/[^0-9.]/g, ''),
       date: formData.date?.trim(),
@@ -146,23 +300,24 @@ const AddOrder = ({navigation}) => {
       address: formData.address?.trim(),
       order_type: orderTypeValue,
       description: formData.description || '',
-      confirm: formData.confirm || ''
+      confirm: formData.confirm || '',
+      // confirm: formData.confirm || '0',
     };
 
     dispatch(addUpcomingOrder(submissionData));
   };
 
   const orderTypes = [
-  { label: 'Pumping', value: '1' },
-  { label: 'Dumping', value: '2' },
-];
+    {label: 'Pumping', value: '1'},
+    {label: 'Dumping', value: '2'},
+  ];
   return (
     <>
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}>
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 0}}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
 
@@ -187,10 +342,10 @@ const AddOrder = ({navigation}) => {
                 style={styles.fieldIcon}
               />
               <Text style={styles.labelText}>
-                Customer Name<Text style={styles.required}> *</Text>
+                Company Name<Text style={styles.required}> *</Text>
               </Text>
             </View>
-            <View style={styles.pickerContainer}>
+            {/* <View style={styles.pickerContainer}>
               {customersLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#F7374F" />
@@ -200,31 +355,55 @@ const AddOrder = ({navigation}) => {
                   selectedValue={formData.customer_id}
                   onValueChange={handleCustomerSelect}
                   style={styles.picker}
-                  dropdownIconColor="#F7374F"
-                >
+                  dropdownIconColor="#F7374F">
                   <Picker.Item label="Select a customer" value="" />
-                  {Array.isArray(customers) && customers.map((item) => (
-                    <Picker.Item
-                      key={item.id}
-                      label={item.name}
-                      value={item.id}
-                    />
-                  ))}
+                  {Array.isArray(customers) &&
+                    customers.map(item => (
+                      <Picker.Item
+                        key={item.id}
+                        label={item.name}
+                        value={item.id}
+                      />
+                    ))}
                 </Picker>
               )}
-            </View>
+            </View> */}
+            <CustomDropdown
+              value={formData.customer_id}
+              onValueChange={handleCustomerSelect}
+              items={customers || []}
+              placeholder="Select a company"
+              loading={customersLoading}
+              style={styles.pickerContainer}
+              getLabel={item => item.name}
+              getValue={item => item.id}
+            />
           </View>
 
-          <FormField
-            icon="cube-outline"
-            label="Product Grade"
-            value={formData.product_grade}
-            onChangeText={text => handleChange('product_grade', text)}
-            required
-            isDropdown={true}
-            dropdownItems={productGrades || []}
-            loading={productGradesLoading}
-          />
+          <View style={styles.fieldContainer}>
+            <View style={styles.fieldLabel}>
+              <Icon
+                name="cube-outline"
+                size={f(2.5)}
+                color="#F7374F"
+                style={styles.fieldIcon}
+              />
+              <Text style={styles.labelText}>
+                Product Grade<Text style={styles.required}> *</Text>
+              </Text>
+            </View>
+            <CustomDropdown
+              value={formData.product_grade}
+              onValueChange={value => handleChange('product_grade', value)}
+              items={productGrades || []}
+              placeholder="Select a product grade"
+              loading={productGradesLoading}
+              style={styles.pickerContainer}
+              getLabel={item => item.name}
+              getValue={item => item.id}
+            />
+          </View>
+
           <FormField
             icon="scale-outline"
             label="Quantity"
@@ -314,40 +493,30 @@ const AddOrder = ({navigation}) => {
             multiline
             required
           />
-          {/* <FormField
-            icon="pricetag-outline"
-            label="Type"
-            value={formData.order_type}
-            onChangeText={text => handleChange('order_type', text)}
-            placeholder="Pumping/Dumping etc."
-          /> */}
 
-<View style={{ marginBottom: 20 }}>
-  <Text style={{ fontSize: 16, marginBottom: 8 }}>Type</Text>
-  <View
-    style={{
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-      overflow: 'hidden',
-      backgroundColor: '#ffffff',
-    }}
-  >
-    <Picker
-      selectedValue={formData.order_type}
-      onValueChange={(itemValue) =>
-        setFormData((prev) => ({ ...prev, order_type: itemValue }))
-      }
-      mode="dropdown"
-      style={{ height: 55 }}
-    >
-      <Picker.Item label="Select Type" value="" />
-      <Picker.Item label="Pumping" value="Pumping" />
-      <Picker.Item label="Dumping" value="Dumping" />
-    </Picker>
-  </View>
-</View>
-
+          <View style={{marginBottom: 20}}>
+            <Text style={{fontSize: 16, marginBottom: 8}}>Type</Text>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 5,
+                overflow: 'hidden',
+                backgroundColor: '#ffffff',
+              }}>
+              <Picker
+                selectedValue={formData.order_type}
+                onValueChange={itemValue =>
+                  setFormData(prev => ({...prev, order_type: itemValue}))
+                }
+                mode="dropdown"
+                style={{height: 55}}>
+                <Picker.Item label="Select Type" value="" />
+                <Picker.Item label="Pumping" value="Pumping" />
+                <Picker.Item label="Dumping" value="Dumping" />
+              </Picker>
+            </View>
+          </View>
 
           <FormField
             icon="document-text-outline"
@@ -356,45 +525,50 @@ const AddOrder = ({navigation}) => {
             onChangeText={text => handleChange('description', text)}
             multiline
           />
-          <View style={{ marginBottom: 20 }}>
-  <Text style={{ fontSize: 16, marginBottom: 8 }}>Status</Text>
-  <View
-    style={{
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-      overflow: 'hidden',
-      backgroundColor: '#ffffff',
-    }}
-  >
-    <Picker
-      selectedValue={formData.confirm}
-      onValueChange={(itemValue) =>
-        setFormData((prev) => ({ ...prev, confirm: itemValue }))
-      }
-      mode="dropdown"
-      style={{ height: 55 }}
-    >
-      <Picker.Item label="Select Status" value="" />
-      <Picker.Item label="Pending" value="0" />
-      <Picker.Item label="Confirm" value="1" />
-    </Picker>
-  </View>
-</View>
+          <View style={{marginBottom: 20}}>
+            <Text style={{fontSize: 16, marginBottom: 8}}>Status</Text>
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                borderRadius: 5,
+                overflow: 'hidden',
+                backgroundColor: '#ffffff',
+              }}>
+              <Picker
+                selectedValue={formData.confirm}
+                onValueChange={itemValue =>
+                  setFormData(prev => ({...prev, confirm: itemValue}))
+                }
+                mode="dropdown"
+                style={{height: 55}}>
+                <Picker.Item label="Select Status" value="" />
+                <Picker.Item label="Pending" value="0" />
+                <Picker.Item label="Confirm" value="1" />
+              </Picker>
+            </View>
+          </View>
 
-
-          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            disabled={loading}>
             <LinearGradient
               colors={['#4CAF50', '#66BB6A']}
               style={styles.submitGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}>
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}>
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <>
                   <Text style={styles.submitButtonText}>Create Order</Text>
-                  <Icon name="checkmark" size={f(2.5)} color="white" style={styles.submitIcon} />
+                  <Icon
+                    name="checkmark"
+                    size={f(2.5)}
+                    color="white"
+                    style={styles.submitIcon}
+                  />
                 </>
               )}
             </LinearGradient>
@@ -420,7 +594,12 @@ const FormField = ({
 }) => (
   <View style={styles.fieldContainer}>
     <View style={styles.fieldLabel}>
-      <Icon name={icon} size={f(2.5)} color="#F7374F" style={styles.fieldIcon} />
+      <Icon
+        name={icon}
+        size={f(2.5)}
+        color="#F7374F"
+        style={styles.fieldIcon}
+      />
       <Text style={styles.labelText}>
         {label}
         {required && <Text style={styles.required}> *</Text>}
@@ -438,16 +617,16 @@ const FormField = ({
               selectedValue={value}
               onValueChange={onChangeText}
               style={styles.picker}
-              dropdownIconColor="#F7374F"
-            >
+              dropdownIconColor="#F7374F">
               <Picker.Item label="Select an option" value="" />
-              {Array.isArray(dropdownItems) && dropdownItems.map((item) => (
-                <Picker.Item
-                  key={item?.id || item?.name}
-                  label={item?.name || 'Unknown'}
-                  value={item?.id || ''}
-                />
-              ))}
+              {Array.isArray(dropdownItems) &&
+                dropdownItems.map(item => (
+                  <Picker.Item
+                    key={item?.id || item?.name}
+                    label={item?.name || 'Unknown'}
+                    value={item?.id || ''}
+                  />
+                ))}
             </Picker>
           )}
         </View>
@@ -455,7 +634,7 @@ const FormField = ({
         <>
           {unit && <Text style={styles.unitText}>{unit}</Text>}
           <TextInput
-            style={[styles.input, unit && { paddingLeft: w(8) }]}
+            style={[styles.input, unit && {paddingLeft: w(8)}]}
             value={value}
             onChangeText={onChangeText}
             {...props}
@@ -466,7 +645,7 @@ const FormField = ({
   </View>
 );
 const styles = StyleSheet.create({
-    pickerContainer: {
+  pickerContainer: {
     backgroundColor: 'white',
     borderRadius: w(2),
     borderWidth: 1,
@@ -605,6 +784,119 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+    customDropdownContainer: {
+    width: '100%',
+  },
+  customDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    padding: w(3),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  customDropdownButtonText: {
+    fontSize: f(2),
+    color: '#333',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownContent: {
+    backgroundColor: 'white',
+    borderRadius: w(3),
+    width: '85%',
+    maxHeight: h(60),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(4),
+    borderTopLeftRadius: w(3),
+    borderTopRightRadius: w(3),
+  },
+  dropdownTitle: {
+    fontSize: f(2.4),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  closeButton: {
+    padding: w(1),
+  },
+  searchContainer: {
+    padding: w(3),
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    paddingHorizontal: w(3),
+    paddingVertical: w(2),
+  },
+  searchIcon: {
+    marginRight: w(2),
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: f(2),
+    color: '#333',
+    padding: w(2),
+    fontFamily: 'Poppins-Regular',
+  },
+  clearSearchButton: {
+    padding: w(1),
+  },
+  dropdownList: {
+    maxHeight: h(45),
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: w(3),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  dropdownItemSelected: {
+    backgroundColor: '#FFF5F6',
+  },
+  dropdownItemText: {
+    fontSize: f(2),
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
+  },
+  dropdownItemTextSelected: {
+    color: '#F7374F',
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  noResultsContainer: {
+    padding: w(5),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    fontSize: f(2),
+    color: '#666',
+    marginTop: h(2),
+    fontFamily: 'Poppins-Regular',
   },
 });
 

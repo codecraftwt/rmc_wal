@@ -7,17 +7,18 @@ import {h, w, f} from 'walstar-rn-responsive';
 const Header = ({
   title,
   navigation,
-  //   showBackButton = true,
+  // showBackButton = true,
   showBackButton,
   rightIcon,
   onRightIconPress,
   gradientColors = ['#F7374F', '#FF6B6B'],
    onBackPress,
+   style
 }) => {
   return (
     <LinearGradient
       colors={gradientColors}
-      style={styles.header}
+      style={[styles.header, style]}
       start={{x: 0, y: 0}}
       end={{x: 1, y: 0}}>
       <View style={styles.headerContent}>
