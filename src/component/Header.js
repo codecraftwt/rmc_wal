@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: w(8),
     paddingTop: Platform.OS === 'android' ? h(4.6) : 0,
     paddingHorizontal: Platform.OS === 'android' ? w(2) : 0,
-    height: Platform.OS === 'ios' ? h(20) : 0,
+    height: Platform.OS === 'ios' ? h(20) : h(14),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -75,14 +75,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
     marginHorizontal: w(4),
-    paddingTop: h(5)
+    // paddingTop: h(5)
+    paddingTop: Platform.OS === 'ios' ? h(5) : 0,
   },
   backButton: {
     padding: w(1),
+    paddingTop: Platform.OS === 'ios' ? h(5) : 0,
   },
   rightButton: {
     padding: w(1),
+    paddingTop: Platform.OS === 'ios' ? h(5) : 0,
   },
 });
 
 export default Header;
+

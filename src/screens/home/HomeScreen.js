@@ -46,7 +46,9 @@ const HomeScreen = ({navigation}) => {
       content: 'Add, Manage and View all customers',
       icon: 'bar-chart-outline',
       colors: ['#83D78F', '#6BCB77'],
-      navigateTo: 'AddCustomers',
+      // navigateTo: 'AddCustomers',
+      navigateTo: 'Customers',
+      
     },
   ];
   

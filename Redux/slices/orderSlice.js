@@ -1,13 +1,13 @@
-import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AxiosInstance from '../../Utils/AxoisInstance';
-import {baseURL} from '../../Utils/api';
+import { baseURL } from '../../Utils/api';
 
 export const fetchUpcomingOrders = createAsyncThunk(
   'order/fetchUpcomingOrders',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await AxiosInstance.get(`${baseURL}/upcoming_order_api`);
-       console.log("gettttttttttting initial fetchupcomming order", response.data)
+      console.log("gettttttttttting initial fetchupcomming order", response.data)
       if (response.data.status) {
         return response.data;
       } else {
@@ -21,7 +21,7 @@ export const fetchUpcomingOrders = createAsyncThunk(
 
 export const deleteUpcomingOrder = createAsyncThunk(
   'orders/deleteUpcomingOrder',
-  async (id, {rejectWithValue}) => {
+  async (id, { rejectWithValue }) => {
     try {
       const formData = new FormData();
       formData.append('id', id.toString());
@@ -40,7 +40,7 @@ export const deleteUpcomingOrder = createAsyncThunk(
 
 export const editUpcomingOrder = createAsyncThunk(
   'orders/editUpcomingOrder',
-  async ({id, orderData}, {rejectWithValue}) => {
+  async ({ id, orderData }, { rejectWithValue }) => {
     try {
       const formData = new FormData();
 
@@ -69,10 +69,10 @@ export const editUpcomingOrder = createAsyncThunk(
         formData.append('description', orderData.description);
       }
       if (orderData.confirm !== undefined) {
-        formData.append('confirm', orderData.confirm );
+        formData.append('confirm', orderData.confirm);
       }
-     console.log("EditUpcomming -----", formData);
-     
+      console.log("EditUpcomming -----", formData);
+
       const response = await AxiosInstance.post(
         '/edit_upcoming_order_api',
         formData,
@@ -109,10 +109,10 @@ export const editUpcomingOrder = createAsyncThunk(
 
 export const fetchProductGrades = createAsyncThunk(
   'order/fetchProductGrades',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await AxiosInstance.get('/product_grade_api');
-      
+
       if (response.data.status) {
         const transformedData = response.data.data.map(item => ({
           id: item.id.toString(),
@@ -123,7 +123,7 @@ export const fetchProductGrades = createAsyncThunk(
         return rejectWithValue(response.data.message || 'Failed to fetch product grades');
       }
     } catch (error) {
-      console.error('Product Grades API Error:', error); 
+      console.error('Product Grades API Error:', error);
       return rejectWithValue(error.message || 'Network Error');
     }
   },
@@ -131,10 +131,10 @@ export const fetchProductGrades = createAsyncThunk(
 
 export const fetchCustomers = createAsyncThunk(
   'order/fetchCustomers',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await AxiosInstance.get('/get_customers_details_api');
-      
+
       if (response.data.status) {
         const transformedData = response.data.data.map(item => ({
           id: item.userid,
@@ -147,6 +147,8 @@ export const fetchCustomers = createAsyncThunk(
           state: item.state,
           address: item.address,
           website: item.website,
+          default_language: item.default_language,
+          default_currency: item.default_currency,
           billing: {
             street: item.billing_street,
             city: item.billing_city,
@@ -175,10 +177,10 @@ export const fetchCustomers = createAsyncThunk(
 
 export const fetchCustomerFormData = createAsyncThunk(
   'order/fetchCustomerFormData',
-  async (_, {rejectWithValue}) => {
+  async (_, { rejectWithValue }) => {
     try {
       const response = await AxiosInstance.get('/get_customer_form_data_api');
-      
+
       if (response.data.status) {
         return response.data;
       } else {
@@ -193,10 +195,10 @@ export const fetchCustomerFormData = createAsyncThunk(
 
 export const addCustomer = createAsyncThunk(
   'order/addCustomer',
-  async (customerData, {rejectWithValue}) => {
+  async (customerData, { rejectWithValue }) => {
     try {
       const formData = new FormData();
-      
+
       // Append all customer data to formData
       Object.entries(customerData).forEach(([key, value]) => {
         if (Array.isArray(value)) {
@@ -219,6 +221,39 @@ export const addCustomer = createAsyncThunk(
       }
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+export const editCustomer = createAsyncThunk(
+  'order/editCustomer',
+  async (customerData, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+
+      // Append all customer data to formData
+      Object.entries(customerData).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      const response = await AxiosInstance.post('/edit_customers_api', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.status) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to update customer');
+      }
+    } catch (error) {
+      console.error('Edit Customer Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to update customer');
     }
   }
 );
@@ -249,6 +284,9 @@ const initialState = {
   addCustomerLoading: false,
   addCustomerSuccess: false,
   addCustomerError: null,
+  editCustomerLoading: false,
+  editCustomerSuccess: false,
+  editCustomerError: null,
 };
 
 const orderSlice = createSlice({
@@ -265,6 +303,11 @@ const orderSlice = createSlice({
       state.addCustomerSuccess = false;
       state.addCustomerError = null;
     },
+    resetEditCustomerState: state => {
+      state.editCustomerLoading = false;
+      state.editCustomerSuccess = false;
+      state.editCustomerError = null;
+    },
   },
   extraReducers: builder => {
     // Fetch Upcoming Orders
@@ -279,7 +322,7 @@ const orderSlice = createSlice({
           'Fetch orders fulfilled - setting loading to false and updating orders',
         );
         state.loading = false;
-        console.log("upcomingOrdersupcomingOrdersupcomingOrders-Redux", action.payload )
+        console.log("upcomingOrdersupcomingOrdersupcomingOrders-Redux", action.payload)
         state.upcomingOrders = action.payload;
         state.error = null;
       })
@@ -392,9 +435,53 @@ const orderSlice = createSlice({
         state.addCustomerSuccess = false;
         state.addCustomerError = action.payload;
       });
+
+    // Add Edit Customer cases
+    builder
+      .addCase(editCustomer.pending, state => {
+        state.editCustomerLoading = true;
+        state.editCustomerSuccess = false;
+        state.editCustomerError = null;
+      })
+      .addCase(editCustomer.fulfilled, (state, action) => {
+        state.editCustomerLoading = false;
+        state.editCustomerSuccess = true;
+        state.editCustomerError = null;
+        // Update the customer in the customers list
+        const updatedCustomer = action.payload.data;
+        const index = state.customers.findIndex(c => c.id === updatedCustomer.id);
+        if (index !== -1) {
+          state.customers[index] = {
+            ...state.customers[index],
+            ...updatedCustomer,
+            id: updatedCustomer.id,
+            name: updatedCustomer.company,
+            phone: updatedCustomer.phonenumber,
+            billing: {
+              street: updatedCustomer.billing_street,
+              city: updatedCustomer.billing_city,
+              state: updatedCustomer.billing_state,
+              zip: updatedCustomer.billing_zip,
+              country: updatedCustomer.billing_country
+            },
+            shipping: {
+              street: updatedCustomer.shipping_street,
+              city: updatedCustomer.shipping_city,
+              state: updatedCustomer.shipping_state,
+              zip: updatedCustomer.shipping_zip,
+              country: updatedCustomer.shipping_country
+            }
+          };
+        }
+      })
+      .addCase(editCustomer.rejected, (state, action) => {
+        state.editCustomerLoading = false;
+        state.editCustomerSuccess = false;
+        state.editCustomerError = action.payload;
+      });
   },
 });
 
-export const {resetOrderState, resetAddCustomerState} = orderSlice.actions;
+export const { resetOrderState, resetAddCustomerState, resetEditCustomerState } = orderSlice.actions;
 
 export default orderSlice.reducer;
