@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
   Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { h, w, f } from 'walstar-rn-responsive';
@@ -24,7 +25,7 @@ import {
   deleteUpcomingOrder,
 } from '../../../Redux/slices/orderSlice';
 import { useFocusEffect } from '@react-navigation/native';
-import Calendar from 'react-native-calendars';
+import { Calendar as RNCalendar } from 'react-native-calendars';
 
 const OrderCard = ({ order, navigation, onDelete }) => {
   console.log("order_orderfromUpcoming", order)
@@ -125,16 +126,17 @@ const UpcomingOrders = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState('pending');
   const [showAll, setShowAll] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  // const [showCalendar, setShowCalendar] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
 
   const dispatch = useDispatch();
-  const { upcomingOrders, loading, error } = useSelector(state => {
+  const { upcomingOrders, loading, error, customers } = useSelector(state => {
     console.log('Redux State in selector:', {
       loading: state.order.loading,
       error: state.order.error,
       hasOrders: !!state.order.upcomingOrders,
       ordersData: state.order.upcomingOrders,
+      customers: state.order.customers
     });
     return state.order;
   });
@@ -174,21 +176,31 @@ const UpcomingOrders = ({ navigation, route }) => {
   }, [navigation]);
 
   const transformOrder = order => {
-    console.log('Transforming order:', order);
-    return {
+    console.log('Raw order data from API:', order);
+    console.log('Available customers:', customers);
+    
+    // Find customer details from customers list
+    const customer = customers?.find(c => c.id === order.customer_id);
+    console.log('Found customer for order:', customer);
+    
+    const transformedOrder = {
       id: order.id,
-      customer_details: order.company || 'Unknown Customer',
+      customer_details: customer?.name || order.customer_details || 'Unknown Customer',
+      customer_id: order.customer_id || '',
       productGrade: order.product_name || 'Unknown Product',
+      product_grade_id: order.product_grade_id || '',
       quantity: `${order.quantity} kg`,
       date: order.order_date || 'No date',
       onsiteTime: order.on_site_time || 'No time',
       address: order.address || 'No address',
       type: order.order_type === '1' ? 'Pumping' : 'Dumping',
       description: order.description || 'No description',
-      status:
-        order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
+      status: order.confirm === '1' || order.confirm === 1 ? 'confirmed' : 'pending',
       confirm: order.confirm,
     };
+
+    console.log('Transformed order:', transformedOrder);
+    return transformedOrder;
   };
 
   let transformedOrders = [];
@@ -198,10 +210,12 @@ const UpcomingOrders = ({ navigation, route }) => {
   }
 
   const formatDate = (date) => {
+    if (!date) return '';
     return date.toISOString().split('T')[0];
   };
 
   const isSameDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
     return formatDate(date1) === formatDate(date2);
   };
 
@@ -271,10 +285,25 @@ const UpcomingOrders = ({ navigation, route }) => {
     }).start();
   };
 
-  // const handleDateSelect = (date) => {
-  //   setSelectedDate(new Date(date.timestamp));
-  //   setShowCalendar(false);
-  // };
+  const handleDateSelect = (date) => {
+    try {
+      const selectedDateObj = new Date(date.timestamp);
+      setSelectedDate(selectedDateObj);
+      setShowCalendar(false);
+    } catch (error) {
+      console.error('Error selecting date:', error);
+    }
+  };
+
+  const getMarkedDates = () => {
+    if (!selectedDate) return {};
+    return {
+      [formatDate(selectedDate)]: {
+        selected: true,
+        selectedColor: '#F7374F',
+      },
+    };
+  };
 
   if (loading) {
     // console.log('Rendering loading state');
@@ -325,6 +354,55 @@ const UpcomingOrders = ({ navigation, route }) => {
           onBackPress={() => navigation.navigate('MainTabs')}
           onRightIconPress={() => navigation.navigate('AddOrder')}
         />
+
+        <View style={styles.filterContainer}>
+          <View style={styles.searchContainer}>
+            <Icon
+              name="search"
+              size={f(2.5)}
+              color="#888"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by company, material, or address"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="close-circle" size={f(2.5)} color="#888" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.dateFilterButton,
+              selectedDate && styles.dateFilterButtonActive,
+            ]}
+            onPress={() => setShowCalendar(true)}>
+            <Icon
+              name="calendar-outline"
+              size={f(2.5)}
+              color={selectedDate ? '#FFFFFF' : '#F7374F'}
+            />
+            {selectedDate && (
+              <View style={styles.dateFilterBadge}>
+                <Text style={styles.dateFilterBadgeText}>1</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {selectedDate && (
+            <TouchableOpacity
+              style={styles.clearDateButton}
+              onPress={() => setSelectedDate(null)}>
+              <Icon name="close-circle" size={f(2.5)} color="#F7374F" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         <View style={styles.tabContainer}>
           <View style={styles.tabBackground}>
@@ -380,55 +458,6 @@ const UpcomingOrders = ({ navigation, route }) => {
           </View>
         </View>
 
-        <View style={styles.filterContainer}>
-          <View style={styles.searchContainer}>
-            <Icon
-              name="search"
-              size={f(2.5)}
-              color="#888"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by company, material, or address"
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Icon name="close-circle" size={f(2.5)} color="#888" />
-              </TouchableOpacity>
-            ) : null}
-          </View>
-
-          {/* <TouchableOpacity
-            style={[
-              styles.dateFilterButton,
-              selectedDate && styles.dateFilterButtonActive,
-            ]}
-            onPress={() => setShowCalendar(true)}>
-            <Icon
-              name="calendar-outline"
-              size={f(2.5)}
-              color={selectedDate ? '#FFFFFF' : '#F7374F'}
-            />
-            {selectedDate && (
-              <View style={styles.dateFilterBadge}>
-                <Text style={styles.dateFilterBadgeText}>1</Text>
-              </View>
-            )}
-          </TouchableOpacity> */}
-
-          {selectedDate && (
-            <TouchableOpacity
-              style={styles.clearDateButton}
-              onPress={() => setSelectedDate(null)}>
-              <Icon name="close-circle" size={f(2.5)} color="#F7374F" />
-            </TouchableOpacity>
-          )}
-        </View>
-
         <View style={styles.headerRow}>
           <Text style={styles.sectionTitle}>Recent orders</Text>
           {shouldShowToggle && (
@@ -479,58 +508,50 @@ const UpcomingOrders = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* <Modal
+        <Modal
           visible={showCalendar}
           transparent={true}
           animationType="fade"
           onRequestClose={() => setShowCalendar(false)}>
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowCalendar(false)}>
-            <View style={styles.calendarContainer}>
-              <View style={styles.calendarHeader}>
-                <Text style={styles.calendarTitle}>Select Date</Text>
-                <TouchableOpacity
-                  onPress={() => setShowCalendar(false)}
-                  style={styles.closeButton}>
-                  <Icon name="close" size={f(2.5)} color="#666" />
-                </TouchableOpacity>
-              </View>
-              <Calendar
-                onDayPress={handleDateSelect}
-                minDate={formatDate(new Date())}
-                markedDates={
-                  selectedDate
-                    ? {
-                      [formatDate(selectedDate)]: {
-                        selected: true,
-                        selectedColor: '#F7374F',
-                      },
-                    }
-                    : {}
-                }
-                theme={{
-                  calendarBackground: '#FFFFFF',
-                  textSectionTitleColor: '#666',
-                  selectedDayBackgroundColor: '#F7374F',
-                  selectedDayTextColor: '#FFFFFF',
-                  todayTextColor: '#F7374F',
-                  dayTextColor: '#333',
-                  textDisabledColor: '#999',
-                  dotColor: '#F7374F',
-                  selectedDotColor: '#FFFFFF',
-                  arrowColor: '#F7374F',
-                  monthTextColor: '#333',
-                  indicatorColor: '#F7374F',
-                  textDayFontSize: f(2),
-                  textMonthFontSize: f(2.2),
-                  textDayHeaderFontSize: f(2),
-                }}
-              />
+          <TouchableWithoutFeedback onPress={() => setShowCalendar(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.calendarContainer}>
+                  <View style={styles.calendarHeader}>
+                    <Text style={styles.calendarTitle}>Select Date</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowCalendar(false)}
+                      style={styles.closeButton}>
+                      <Icon name="close" size={f(2.5)} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+                  <RNCalendar
+                    onDayPress={handleDateSelect}
+                    maxDate={formatDate(new Date())}
+                    markedDates={getMarkedDates()}
+                    theme={{
+                      calendarBackground: '#FFFFFF',
+                      textSectionTitleColor: '#666',
+                      selectedDayBackgroundColor: '#F7374F',
+                      selectedDayTextColor: '#FFFFFF',
+                      todayTextColor: '#F7374F',
+                      dayTextColor: '#333',
+                      textDisabledColor: '#999',
+                      dotColor: '#F7374F',
+                      selectedDotColor: '#FFFFFF',
+                      arrowColor: '#F7374F',
+                      monthTextColor: '#333',
+                      indicatorColor: '#F7374F',
+                      textDayFontSize: f(2),
+                      textMonthFontSize: f(2.2),
+                      textDayHeaderFontSize: f(2),
+                    }}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
             </View>
-          </TouchableOpacity>
-        </Modal> */}
+          </TouchableWithoutFeedback>
+        </Modal>
       </LinearGradient>
     </>
   );

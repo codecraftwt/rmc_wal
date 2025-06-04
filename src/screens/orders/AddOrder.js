@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -321,260 +323,286 @@ console.log("formData_formdata", formData)
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
 
-      <LinearGradient
-        colors={['#F8FAFF', '#F0F4FF']}
-        style={styles.container}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}>
-        <Header
-          title="Add New Order"
-          navigation={navigation}
-          showBackButton="arrow-back"
-        />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingContainer}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <LinearGradient
+          colors={['#F8FAFF', '#F0F4FF']}
+          style={styles.container}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}>
+          <Header
+            title="Add New Order"
+            navigation={navigation}
+            showBackButton="arrow-back"
+          />
 
-        <ScrollView contentContainerStyle={styles.formContainer}>
-          <View style={styles.fieldContainer}>
-            <View style={styles.fieldLabel}>
-              <Icon
-                name="person-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
+          <ScrollView 
+            contentContainerStyle={styles.formContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="person-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Company Name<Text style={styles.required}> *</Text>
+                </Text>
+              </View>
+              {/* <View style={styles.pickerContainer}>
+                {customersLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#F7374F" />
+                  </View>
+                ) : (
+                  <Picker
+                    selectedValue={formData.customer_id}
+                    onValueChange={handleCustomerSelect}
+                    style={styles.picker}
+                    dropdownIconColor="#F7374F">
+                    <Picker.Item label="Select a customer" value="" />
+                    {Array.isArray(customers) &&
+                      customers.map(item => (
+                        <Picker.Item
+                          key={item.id}
+                          label={item.name}
+                          value={item.id}
+                        />
+                      ))}
+                  </Picker>
+                )}
+              </View> */}
+              <CustomDropdown
+                value={formData.customer_id}
+                onValueChange={handleCustomerSelect}
+                items={customers || []}
+                placeholder="Select a company"
+                loading={customersLoading}
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
               />
-              <Text style={styles.labelText}>
-                Company Name<Text style={styles.required}> *</Text>
-              </Text>
             </View>
-            {/* <View style={styles.pickerContainer}>
-              {customersLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#F7374F" />
-                </View>
-              ) : (
-                <Picker
-                  selectedValue={formData.customer_id}
-                  onValueChange={handleCustomerSelect}
-                  style={styles.picker}
-                  dropdownIconColor="#F7374F">
-                  <Picker.Item label="Select a customer" value="" />
-                  {Array.isArray(customers) &&
-                    customers.map(item => (
-                      <Picker.Item
-                        key={item.id}
-                        label={item.name}
-                        value={item.id}
-                      />
-                    ))}
-                </Picker>
-              )}
-            </View> */}
-            <CustomDropdown
-              value={formData.customer_id}
-              onValueChange={handleCustomerSelect}
-              items={customers || []}
-              placeholder="Select a company"
-              loading={customersLoading}
-              style={styles.pickerContainer}
-              getLabel={item => item.name}
-              getValue={item => item.id}
-            />
-          </View>
 
-          <View style={styles.fieldContainer}>
-            <View style={styles.fieldLabel}>
-              <Icon
-                name="cube-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
-              />
-              <Text style={styles.labelText}>
-                Product Grade<Text style={styles.required}> *</Text>
-              </Text>
-            </View>
-            <CustomDropdown
+            {/* <FormField
+              icon="cube-outline"
+              label="Product Grade"
               value={formData.product_grade}
-              onValueChange={value => handleChange('product_grade', value)}
-              items={productGrades || []}
-              placeholder="Select a product grade"
+              onChangeText={text => handleChange('product_grade', text)}
+              required
+              isDropdown={true}
+              dropdownItems={productGrades || []}
               loading={productGradesLoading}
-              style={styles.pickerContainer}
-              getLabel={item => item.name}
-              getValue={item => item.id}
+            /> */}
+
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="cube-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Product Grade<Text style={styles.required}> *</Text>
+                </Text>
+              </View>
+              <CustomDropdown
+                value={formData.product_grade}
+                onValueChange={value => handleChange('product_grade', value)}
+                items={productGrades || []}
+                placeholder="Select a product grade"
+                loading={productGradesLoading}
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
+              />
+            </View>
+
+            <FormField
+              icon="scale-outline"
+              label="Quantity"
+              value={formData.quantity}
+              onChangeText={text => handleChange('quantity', text)}
+              keyboardType="numeric"
+              required
+              unit="Kg"
             />
-          </View>
 
-          <FormField
-            icon="scale-outline"
-            label="Quantity"
-            value={formData.quantity}
-            onChangeText={text => handleChange('quantity', text)}
-            keyboardType="numeric"
-            required
-            unit="Kg"
-          />
-
-          {/* Date Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.fieldLabel}>
-              <Icon
-                name="calendar-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
-              />
-              <Text style={styles.labelText}>
-                Date<Text style={styles.required}> *</Text>
-              </Text>
+            {/* Date Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="calendar-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Date<Text style={styles.required}> *</Text>
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setDatePickerOpen(true)}
+                style={styles.dateInput}>
+                <Text
+                  style={[
+                    styles.dateInputText,
+                    !formData.date && {color: '#999'},
+                  ]}>
+                  {formData.date || 'Select a date'}
+                </Text>
+                <Icon name="calendar" size={f(2.5)} color="#888" />
+              </TouchableOpacity>
             </View>
+            <DatePicker
+              modal
+              open={datePickerOpen}
+              date={selectedDate}
+              onConfirm={handleDateConfirm}
+              onCancel={() => setDatePickerOpen(false)}
+              mode="date"
+              minimumDate={new Date()}
+            />
+
+            {/* Time Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="time-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Onsite Time<Text style={styles.required}> *</Text>
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setTimePickerOpen(true)}
+                style={styles.dateInput}>
+                <Text
+                  style={[
+                    styles.dateInputText,
+                    !formData.on_site_time && {color: '#999'},
+                  ]}>
+                  {formData.on_site_time || 'Select time'}
+                </Text>
+                <Icon name="time" size={f(2.5)} color="#888" />
+              </TouchableOpacity>
+            </View>
+            <DatePicker
+              modal
+              open={timePickerOpen}
+              date={selectedTime}
+              onConfirm={handleTimeConfirm}
+              onCancel={() => setTimePickerOpen(false)}
+              mode="time"
+            />
+
+            <FormField
+              icon="location-outline"
+              label="Address"
+              value={formData.address}
+              onChangeText={text => handleChange('address', text)}
+              multiline
+              required
+            />
+            {/* <FormField
+              icon="pricetag-outline"
+              label="Type"
+              value={formData.order_type}
+              onChangeText={text => handleChange('order_type', text)}
+              placeholder="Pumping/Dumping etc."
+            /> */}
+
+            <View style={{marginBottom: 20}}>
+              <Text style={{fontSize: 16, marginBottom: 8}}>Type</Text>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 5,
+                  overflow: 'hidden',
+                  backgroundColor: '#ffffff',
+                }}>
+                <Picker
+                  selectedValue={formData.order_type}
+                  onValueChange={itemValue =>
+                    setFormData(prev => ({...prev, order_type: itemValue}))
+                  }
+                  mode="dropdown"
+                  style={{height: 55}}>
+                  <Picker.Item label="Select Type" value="" />
+                  <Picker.Item label="Pumping" value="Pumping" />
+                  <Picker.Item label="Dumping" value="Dumping" />
+                </Picker>
+              </View>
+            </View>
+
+            <FormField
+              icon="document-text-outline"
+              label="Description"
+              value={formData.description}
+              onChangeText={text => handleChange('description', text)}
+              multiline
+            />
+            <View style={{marginBottom: 20}}>
+              <Text style={{fontSize: 16, marginBottom: 8}}>Status</Text>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  borderRadius: 5,
+                  overflow: 'hidden',
+                  backgroundColor: '#ffffff',
+                }}>
+                <Picker
+                  selectedValue={formData.confirm}
+                  onValueChange={itemValue =>
+                    setFormData(prev => ({...prev, confirm: itemValue}))
+                  }
+                  mode="dropdown"
+                  style={{height: 55}}>
+                  <Picker.Item label="Select Status" value="" />
+                  <Picker.Item label="Pending" value="0" />
+                  <Picker.Item label="Confirm" value="1" />
+                </Picker>
+              </View>
+            </View>
+
             <TouchableOpacity
-              onPress={() => setDatePickerOpen(true)}
-              style={styles.dateInput}>
-              <Text
-                style={[
-                  styles.dateInputText,
-                  !formData.date && {color: '#999'},
-                ]}>
-                {formData.date || 'Select a date'}
-              </Text>
-              <Icon name="calendar" size={f(2.5)} color="#888" />
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={loading}>
+              <LinearGradient
+                colors={['#4CAF50', '#66BB6A']}
+                style={styles.submitGradient}
+                start={{x: 0, y: 0}}
+                end={{x: 1, y: 1}}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.submitButtonText}>Create Order</Text>
+                    <Icon
+                      name="checkmark"
+                      size={f(2.5)}
+                      color="white"
+                      style={styles.submitIcon}
+                    />
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
-          <DatePicker
-            modal
-            open={datePickerOpen}
-            date={selectedDate}
-            onConfirm={handleDateConfirm}
-            onCancel={() => setDatePickerOpen(false)}
-            mode="date"
-            minimumDate={new Date()}
-          />
-
-          {/* Time Field */}
-          <View style={styles.fieldContainer}>
-            <View style={styles.fieldLabel}>
-              <Icon
-                name="time-outline"
-                size={f(2.5)}
-                color="#F7374F"
-                style={styles.fieldIcon}
-              />
-              <Text style={styles.labelText}>
-                Onsite Time<Text style={styles.required}> *</Text>
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setTimePickerOpen(true)}
-              style={styles.dateInput}>
-              <Text
-                style={[
-                  styles.dateInputText,
-                  !formData.on_site_time && {color: '#999'},
-                ]}>
-                {formData.on_site_time || 'Select time'}
-              </Text>
-              <Icon name="time" size={f(2.5)} color="#888" />
-            </TouchableOpacity>
-          </View>
-          <DatePicker
-            modal
-            open={timePickerOpen}
-            date={selectedTime}
-            onConfirm={handleTimeConfirm}
-            onCancel={() => setTimePickerOpen(false)}
-            mode="time"
-          />
-
-          <FormField
-            icon="location-outline"
-            label="Address"
-            value={formData.address}
-            onChangeText={text => handleChange('address', text)}
-            multiline
-            required
-          />
-
-          <View style={{marginBottom: 20}}>
-            <Text style={{fontSize: 16, marginBottom: 8}}>Type</Text>
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 5,
-                overflow: 'hidden',
-                backgroundColor: '#ffffff',
-              }}>
-              <Picker
-                selectedValue={formData.order_type}
-                onValueChange={itemValue =>
-                  setFormData(prev => ({...prev, order_type: itemValue}))
-                }
-                mode="dropdown"
-                style={{height: 55}}>
-                <Picker.Item label="Select Type" value="" />
-                <Picker.Item label="Pumping" value="Pumping" />
-                <Picker.Item label="Dumping" value="Dumping" />
-              </Picker>
-            </View>
-          </View>
-
-          <FormField
-            icon="document-text-outline"
-            label="Description"
-            value={formData.description}
-            onChangeText={text => handleChange('description', text)}
-            multiline
-          />
-          <View style={{marginBottom: 20}}>
-            <Text style={{fontSize: 16, marginBottom: 8}}>Status</Text>
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                borderRadius: 5,
-                overflow: 'hidden',
-                backgroundColor: '#ffffff',
-              }}>
-              <Picker
-                selectedValue={formData.confirm}
-                onValueChange={itemValue =>
-                  setFormData(prev => ({...prev, confirm: itemValue}))
-                }
-                mode="dropdown"
-                style={{height: 55}}>
-                <Picker.Item label="Select Status" value="" />
-                <Picker.Item label="Pending" value="0" />
-                <Picker.Item label="Confirm" value="1" />
-              </Picker>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleSubmit}
-            disabled={loading}>
-            <LinearGradient
-              colors={['#4CAF50', '#66BB6A']}
-              style={styles.submitGradient}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.submitButtonText}>Create Order</Text>
-                  <Icon
-                    name="checkmark"
-                    size={f(2.5)}
-                    color="white"
-                    style={styles.submitIcon}
-                  />
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-        </ScrollView>
-      </LinearGradient>
+          </ScrollView>
+        </LinearGradient>
+      </KeyboardAvoidingView>
     </>
   );
 };
@@ -678,7 +706,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: w(5),
-    paddingBottom: h(10),
+    paddingBottom: Platform.OS === 'ios' ? h(15) : h(10),
   },
   fieldContainer: {
     marginBottom: h(2),
@@ -897,6 +925,9 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: h(2),
     fontFamily: 'Poppins-Regular',
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
 });
 

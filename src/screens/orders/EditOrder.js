@@ -193,6 +193,7 @@ const EditOrder = ({ route, navigation }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const { productGrades, productGradesLoading, customers, customersLoading } = useSelector(
     state => state.order,
@@ -200,9 +201,9 @@ const EditOrder = ({ route, navigation }) => {
 
   // Initialize form data with the order details
   const [formData, setFormData] = useState({
-    customer_id: order.company || '',
-    customer_details: order.customer_details || '',
-    product_grade_id: order.productGrade || '',
+    customer_id: order.customer_id || order.company || '',
+    customer_details: order.customer_details || order.company_name || '',
+    product_grade_id: order.product_grade_id || order.productGrade || '',
     quantity: order.quantity?.replace('.00 kg', '') || '',
     order_date: order.order_date || order.date || '',
     on_site_time:
@@ -223,7 +224,8 @@ const EditOrder = ({ route, navigation }) => {
       if (selectedCustomer) {
         setFormData(prev => ({
           ...prev,
-          customer_details: selectedCustomer.name
+          customer_id: selectedCustomer.id,
+          customer_details: selectedCustomer.name,
         }));
       }
     }
@@ -271,6 +273,8 @@ const EditOrder = ({ route, navigation }) => {
 
   const handleUpdate = async () => {
     try {
+      setIsUpdating(true);
+      // Check if any required field is empty or undefined
       if (
         !formData.customer_id ||
         !formData.product_grade_id ||
@@ -281,17 +285,21 @@ const EditOrder = ({ route, navigation }) => {
         !formData.order_type
       ) {
         Alert.alert('Error', 'Please fill in all required fields');
+        setIsUpdating(false);
         return;
       }
+
+      // Find the selected customer from the customers list
+      const selectedCustomer = customers?.find(c => c.id === formData.customer_id);
+      
       const formattedData = {
         ...formData,
-        customer_details: formData.customer_id?.trim(),
+        customer_details: formData.customer_id?.toString(),
         quantity: formData.quantity?.toString().replace(/[^0-9.]/g, ''),
         order_date: formData.order_date?.trim(),
         on_site_time: formData.on_site_time?.trim(),
         address: formData.address?.trim(),
         order_type: formData.order_type?.toString(),
-        customer_id: formData.customer_id?.toString(),
         product_grade_id: formData.product_grade_id?.toString(),
         confirm: formData.confirm?.toString(),
       };
@@ -302,6 +310,7 @@ const EditOrder = ({ route, navigation }) => {
       );
 
       if (editUpcomingOrder.fulfilled.match(resultAction)) {
+        setIsUpdating(false);
         Alert.alert(
           'Success',
           'Order updated successfully!',
@@ -314,10 +323,12 @@ const EditOrder = ({ route, navigation }) => {
           { cancelable: false },
         );
       } else {
+        setIsUpdating(false);
         const errorMessage = resultAction.payload;
         Alert.alert('Error', errorMessage);
       }
     } catch (error) {
+      setIsUpdating(false);
       Alert.alert('Error', 'An unexpected error occurred');
     }
   };
@@ -361,13 +372,29 @@ const EditOrder = ({ route, navigation }) => {
           navigation={navigation}
           showBackButton="arrow-back"
         />
-        <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.card}>
+        {isUpdating && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#F7374F" />
+          </View>
+        )}
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          scrollEnabled={!isUpdating}>
+          <View style={[styles.card, isUpdating && styles.disabledCard]}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Company Name</Text>
               <CustomDropdown
                 value={formData.customer_id}
-                onValueChange={handleCustomerSelect}
+                onValueChange={value => {
+                  const selectedCustomer = customers.find(c => c.id === value);
+                  if (selectedCustomer) {
+                    setFormData(prev => ({
+                      ...prev,
+                      customer_id: selectedCustomer.id,
+                      customer_details: selectedCustomer.name,
+                    }));
+                  }
+                }}
                 items={customers || []}
                 placeholder={formData.customer_details || "Select a company"}
                 loading={customersLoading}
@@ -385,7 +412,7 @@ const EditOrder = ({ route, navigation }) => {
                   setFormData(prev => ({
                     ...prev,
                     product_grade_id: value,
-                    product_grade_name: selectedGrade ? selectedGrade.name : ''
+                    product_grade_name: selectedGrade ? selectedGrade.name : '',
                   }));
                 }}
                 items={productGrades || []}
@@ -544,10 +571,17 @@ const EditOrder = ({ route, navigation }) => {
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
               style={styles.updateButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}>
-              <TouchableOpacity onPress={handleUpdate}>
-                <Text style={styles.updateButtonText}>Update Order</Text>
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 0}}>
+              <TouchableOpacity 
+                onPress={handleUpdate}
+                disabled={isUpdating}
+                style={styles.updateButtonInner}>
+                {isUpdating ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.updateButtonText}>Update Order</Text>
+                )}
               </TouchableOpacity>
             </LinearGradient>
           </View>
@@ -579,7 +613,7 @@ const styles = StyleSheet.create({
     borderRadius: w(3),
     padding: w(4),
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -631,14 +665,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7374F',
     paddingVertical: h(1.5),
     borderRadius: w(2),
+    marginTop: h(2),
+  },
+  updateButtonInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: h(2),
+    minHeight: h(5),
   },
   updateButtonText: {
     fontSize: f(2.2),
     color: '#FFFFFF',
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
   pickerContainer: {
     backgroundColor: '#F5F7FA',
@@ -784,6 +822,20 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: h(2),
     fontFamily: 'Poppins-Regular',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  disabledCard: {
+    opacity: 0.7,
   },
 });
 export default EditOrder;
