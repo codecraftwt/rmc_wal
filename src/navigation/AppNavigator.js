@@ -23,7 +23,6 @@ const Stack = createStackNavigator();
 
 export const AppNavigator = () => {
   const token = useSelector(state => state.auth.token);
-  // console.log('AppNavigator Token --->', token);
 
   return (
     // <Stack.Navigator screenOptions={{headerShown: false}}>

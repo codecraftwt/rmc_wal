@@ -196,8 +196,6 @@ const EditCustomer = ({ route, navigation }) => {
         state => state.order,
     );
 
-    console.log('Customer data received:', customer); // Debug log
-
     const [formData, setFormData] = useState({
         name: customer.name || '',
         vat: customer.vat || '',
@@ -232,11 +230,6 @@ const EditCustomer = ({ route, navigation }) => {
             shipping: { ...prev.billing }
         }));
     };
-
-    // Debug log for initial form data
-    useEffect(() => {
-        console.log('Initial form data:', formData);
-    }, []);
 
     useEffect(() => {
         dispatch(fetchCustomerFormData());

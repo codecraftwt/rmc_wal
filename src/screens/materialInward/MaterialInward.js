@@ -19,7 +19,6 @@ import {fetchMaterialInward} from '../../../Redux/slices/materialInwardSlice';
 const MaterialInward = ({navigation}) => {
   const dispatch = useDispatch();
   const {data, loading, error} = useSelector(state => state.materialInward);
-  console.log(data, ' data-----');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAll, setShowAll] = useState(false);

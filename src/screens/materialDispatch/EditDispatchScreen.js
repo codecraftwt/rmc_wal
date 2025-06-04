@@ -24,7 +24,6 @@ const EditDispatchScreen = ({route, navigation}) => {
   };
 
   const handleSave = () => {
-    // console.log('Updated Data:', form);
     navigation.goBack();
   };
 

@@ -15,8 +15,6 @@ import Header from '../../component/Header';
 
 const OrderDetails = ({route, navigation}) => {
   const {order} = route.params;
-  console.log('Order Data:', order);
-
     useEffect(() => {
       const backAction = () => {
         navigation.goBack(); 

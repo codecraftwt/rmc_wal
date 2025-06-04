@@ -25,43 +25,23 @@ const CustomerDetails = ({ route, navigation }) => {
     const [loading, setLoading] = React.useState(false);
     const [shouldRefresh, setShouldRefresh] = React.useState(false);
 
-    // Detailed logging of customer data
-    console.log('=== Customer Data Debug ===');
-    console.log('Full Customer Object:', JSON.stringify(customer, null, 2));
-    console.log('All Properties:', Object.keys(customer));
-    console.log('Language Properties:', {
-        default_language: customer.default_language,
-        language: customer.language,
-        lang: customer.lang
-    });
-    console.log('Currency Properties:', {
-        default_currency: customer.default_currency,
-        currency: customer.currency,
-        curr: customer.curr
-    });
-    console.log('=== End Debug ===');
-
-    // Helper function to get country name
     const getCountryName = (countryId) => {
         if (!countryId) return 'N/A';
         const country = customerFormData.countries?.find(c => c.country_id === countryId);
         return country ? country.long_name : 'N/A';
     };
 
-    // Helper function to format language
     const formatLanguage = (lang) => {
         if (!lang) return 'N/A';
         return lang.charAt(0).toUpperCase() + lang.slice(1);
     };
 
-    // Helper function to format currency
     const formatCurrency = (curr) => {
         if (!curr) return 'N/A';
         const currency = customerFormData.currencies?.find(c => c.id === curr);
         return currency ? `${currency.name} (${currency.symbol})` : 'N/A';
     };
 
-    // Refresh customer data only when navigating back from edit screen
     useFocusEffect(
         React.useCallback(() => {
             const refreshData = async () => {
@@ -69,7 +49,6 @@ const CustomerDetails = ({ route, navigation }) => {
                     setLoading(true);
                     try {
                         await dispatch(fetchCustomers()).unwrap();
-                        // Find the updated customer data
                         const updatedCustomer = customers.find(c => c.id === initialCustomer.id);
                         if (updatedCustomer) {
                             setCustomer(updatedCustomer);
@@ -87,7 +66,6 @@ const CustomerDetails = ({ route, navigation }) => {
         }, [shouldRefresh, dispatch, initialCustomer.id, customers])
     );
 
-    // Set shouldRefresh to true when navigating to edit screen
     const handleEditPress = () => {
         setShouldRefresh(true);
         navigation.navigate('EditCustomers', { customer });

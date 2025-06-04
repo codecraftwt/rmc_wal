@@ -27,8 +27,6 @@ export const addUpcomingOrder = createAsyncThunk(
           }
         }
       );
-
-      console.log("Added--->", response.data);
       
       return response.data;
     } catch (error) {

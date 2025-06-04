@@ -289,8 +289,7 @@ const AddOrder = ({navigation}) => {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-console.log("formData_formdata", formData)
-    // Convert order type to numeric value
+
     const orderTypeValue = formData.order_type === 'Pumping' ? '1' : '2';
 
     const submissionData = {

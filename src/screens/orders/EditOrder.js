@@ -187,7 +187,6 @@ const CustomDropdown = ({
 const EditOrder = ({ route, navigation }) => {
   const dispatch = useDispatch();
   const { order } = route.params;
-  console.log(' EditData:', order);
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -200,7 +199,6 @@ const EditOrder = ({ route, navigation }) => {
     state => state.order,
   );
 
-  // Initialize form data with the order details
   const [formData, setFormData] = useState({
     customer_id: order.customer_id || order.company || '',
     customer_details: order.customer_details || order.company_name || '',
@@ -372,9 +370,9 @@ const EditOrder = ({ route, navigation }) => {
     handleChange('on_site_time', formattedTime);
   };
 
-  useEffect(() => {
-    console.log('Updated formData:', formData,);
-  }, [formData]);
+  // useEffect(() => {
+  //   console.log('Updated formData:', formData,);
+  // }, [formData]);
 
   if (isInitialLoading) {
     return (

@@ -32,7 +32,6 @@ instance.interceptors.request.use(
   async config => {
     try {
       const token = await AsyncStorage.getItem('authToken');
-      console.log('Token:', token);
       if (token) {
         config.headers.Authorization = token.trim();
       }

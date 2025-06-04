@@ -1,4 +1,3 @@
-// materialInwardSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import AxiosInstance from '../../Utils/AxoisInstance'
 import { baseURL } from '../../Utils/api';
@@ -9,7 +8,6 @@ export const fetchMaterialInward = createAsyncThunk(
     try {
       const response = await AxiosInstance.get(`${baseURL}/material_inwards_api`);
       if (response.data.status) {
-        //  console.log("Material Inward data -->", response.data.data);
         return response.data.data;
   
       } else {

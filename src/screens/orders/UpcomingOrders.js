@@ -145,33 +145,22 @@ const UpcomingOrders = ({ navigation, route }) => {
 
   const dispatch = useDispatch();
   const { upcomingOrders, loading, error, customers } = useSelector(state => {
-    console.log('Redux State in selector:', {
-      loading: state.order.loading,
-      error: state.order.error,
-      hasOrders: !!state.order.upcomingOrders,
-      ordersData: state.order.upcomingOrders,
-      customers: state.order.customers
-    });
     return state.order;
   });
 
   const deleteLoading = useSelector(state => state.order.deleteLoading);
 
-  // Show success message if coming from edit screen
   useEffect(() => {
     if (route.params?.showSuccess) {
       Alert.alert('Success', route.params.message);
-      // Clear the params after showing the alert
       navigation.setParams({ showSuccess: undefined, message: undefined });
     }
   }, [route.params, navigation]);
 
-  // Initial data fetch
   useEffect(() => {
     dispatch(fetchUpcomingOrders());
   }, [dispatch]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       const refreshData = async () => {
@@ -205,12 +194,7 @@ const UpcomingOrders = ({ navigation, route }) => {
   }, [navigation]);
 
   const transformOrder = order => {
-    console.log('Raw order data from API:', order);
-    console.log('Available customers:', customers);
-    
-    // Find customer details from customers list
-    const customer = customers?.find(c => c.id === order.customer_id);
-    console.log('Found customer for order:', customer);
+        const customer = customers?.find(c => c.id === order.customer_id);
     
     const transformedOrder = {
       id: order.id,
@@ -228,14 +212,12 @@ const UpcomingOrders = ({ navigation, route }) => {
       confirm: order.confirm,
     };
 
-    console.log('Transformed order:', transformedOrder);
     return transformedOrder;
   };
 
   let transformedOrders = [];
   if (upcomingOrders && upcomingOrders.data) {
     transformedOrders = upcomingOrders.data.map(transformOrder);
-    console.log('Transformed Orders:', transformedOrders);
   }
 
   const formatDate = (date) => {
@@ -335,7 +317,6 @@ const UpcomingOrders = ({ navigation, route }) => {
   };
 
   if (loading) {
-    // console.log('Rendering loading state');
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF6B6B" />
@@ -345,20 +326,12 @@ const UpcomingOrders = ({ navigation, route }) => {
   }
 
   if (error) {
-    // console.log('Rendering error state:', error);
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error loading orders: {error}</Text>
       </View>
     );
   }
-
-  // Debug log for final render
-  console.log('Rendering main view with orders:', {
-    hasOrders: !!upcomingOrders,
-    ordersData: upcomingOrders,
-    displayOrdersLength: displayOrders.length,
-  });
 
   return (
     <>

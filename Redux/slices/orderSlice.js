@@ -7,7 +7,6 @@ export const fetchUpcomingOrders = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await AxiosInstance.get(`${baseURL}/upcoming_order_api`);
-      console.log("gettttttttttting initial fetchupcomming order", response.data)
       if (response.data.status) {
         return response.data;
       } else {
@@ -44,11 +43,6 @@ export const editUpcomingOrder = createAsyncThunk(
     try {
       const formData = new FormData();
 
-      console.log('Edit Order Data:', {
-        id,
-        orderData,
-      });
-
       formData.append('id', id.toString());
       formData.append('customer_id', orderData.customer_id?.toString() || '');
       formData.append(
@@ -71,20 +65,17 @@ export const editUpcomingOrder = createAsyncThunk(
       if (orderData.confirm !== undefined) {
         formData.append('confirm', orderData.confirm);
       }
-      console.log("EditUpcomming -----", formData);
 
       const response = await AxiosInstance.post(
         '/edit_upcoming_order_api',
         formData,
       );
 
-      console.log('API Response:EditUpcomming', response.data);
 
       if (response.data.status) {
         return response.data;
       } else {
         const errorMessage = response.data.message || 'Failed to update order';
-        console.log('Error Message:', errorMessage);
         if (response.data.errors) {
           console.log('Validation Errors:', response.data.errors);
         }
@@ -313,24 +304,15 @@ const orderSlice = createSlice({
     // Fetch Upcoming Orders
     builder
       .addCase(fetchUpcomingOrders.pending, state => {
-        console.log('Fetch orders pending - setting loading to true');
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchUpcomingOrders.fulfilled, (state, action) => {
-        console.log(
-          'Fetch orders fulfilled - setting loading to false and updating orders',
-        );
         state.loading = false;
-        console.log("upcomingOrdersupcomingOrdersupcomingOrders-Redux", action.payload)
         state.upcomingOrders = action.payload;
         state.error = null;
       })
       .addCase(fetchUpcomingOrders.rejected, (state, action) => {
-        console.log(
-          'Fetch orders rejected - setting loading to false and error:',
-          action.payload,
-        );
         state.loading = false;
         state.error = action.payload;
       });

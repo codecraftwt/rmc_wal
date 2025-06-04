@@ -15,9 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Header from '../../component/Header';
 
 const MaterialInwardDetails = ({route, navigation}) => {
-  const {material} = route.params;
-  // console.log("material ---->", material);
-  
+  const {material} = route.params;  
 
     useEffect(() => {
       const backAction = () => {

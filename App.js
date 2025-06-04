@@ -4,7 +4,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
-import { store, persistor } from './Redux/store'; // adjust path based on your structure
+import { store, persistor } from './Redux/store';
 
 function App() {
   return (
