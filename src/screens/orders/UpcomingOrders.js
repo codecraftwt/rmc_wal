@@ -28,7 +28,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Calendar as RNCalendar } from 'react-native-calendars';
 
 const OrderCard = ({ order, navigation, onDelete }) => {
-  console.log("order_orderfromUpcoming", order)
+  const [isNavigating, setIsNavigating] = useState(false);
+
   function convertTo12Hour(time24) {
     const [hourStr, minute] = time24.split(':');
     let hour = parseInt(hourStr, 10);
@@ -37,6 +38,12 @@ const OrderCard = ({ order, navigation, onDelete }) => {
     if (hour === 0) hour = 12;
     return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
   }
+
+  const handleEditPress = () => {
+    setIsNavigating(true);
+    navigation.navigate('EditOrder', { order });
+  };
+
   return (
     <View
       style={[
@@ -60,14 +67,20 @@ const OrderCard = ({ order, navigation, onDelete }) => {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            onPress={() => navigation.navigate('EditOrder', { order })}
-            style={styles.editButton}>
-            <Icon name="create-outline" size={f(2.5)} color="#4A90E2" />
+            onPress={handleEditPress}
+            style={styles.editButton}
+            disabled={isNavigating}>
+            {isNavigating ? (
+              <ActivityIndicator size="small" color="#4A90E2" />
+            ) : (
+              <Icon name="create-outline" size={f(2.5)} color="#4A90E2" />
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => onDelete(order.id)}
-            style={styles.deleteButton}>
+            style={styles.deleteButton}
+            disabled={isNavigating}>
             <Icon name="trash-outline" size={f(2.5)} color="#F7374F" />
           </TouchableOpacity>
         </View>
@@ -75,7 +88,8 @@ const OrderCard = ({ order, navigation, onDelete }) => {
 
       <TouchableOpacity
         onPress={() => navigation.navigate('OrderDetails', { order })}
-        activeOpacity={0.8}>
+        activeOpacity={0.8}
+        disabled={isNavigating}>
         <View style={styles.detailRow}>
           <View style={styles.iconCircle}>
             <Icon name="calendar-outline" size={f(2.2)} color="#4A90E2" />
@@ -143,20 +157,35 @@ const UpcomingOrders = ({ navigation, route }) => {
 
   const deleteLoading = useSelector(state => state.order.deleteLoading);
 
+  // Show success message if coming from edit screen
+  useEffect(() => {
+    if (route.params?.showSuccess) {
+      Alert.alert('Success', route.params.message);
+      // Clear the params after showing the alert
+      navigation.setParams({ showSuccess: undefined, message: undefined });
+    }
+  }, [route.params, navigation]);
+
+  // Initial data fetch
+  useEffect(() => {
+    dispatch(fetchUpcomingOrders());
+  }, [dispatch]);
+
+  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      dispatch(fetchUpcomingOrders());
-    }, [dispatch]),
+      const refreshData = async () => {
+        try {
+          await dispatch(fetchUpcomingOrders()).unwrap();
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+        }
+      };
+
+      refreshData();
+    }, [dispatch])
   );
 
-  // useEffect(() => {
-  //   console.log('State changed:', {
-  //     loading,
-  //     error,
-  //     hasOrders: !!upcomingOrders,
-  //     ordersData: upcomingOrders,
-  //   });
-  // }, [upcomingOrders, loading, error]);
   useEffect(() => {
     if (upcomingOrders && !loading && !error) {
       setShowAll(false);
@@ -414,7 +443,7 @@ const UpcomingOrders = ({ navigation, route }) => {
                     {
                       translateX: slideAnim.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [0, w(43)],
+                        outputRange: [w(0.5), w(50)],
                       }),
                     },
                   ],
@@ -666,12 +695,20 @@ const styles = StyleSheet.create({
     marginLeft: w(1),
     backgroundColor: 'rgba(74, 144, 226, 0.1)',
     borderRadius: w(2),
+    minWidth: w(8),
+    minHeight: w(8),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteButton: {
     padding: w(1.5),
     marginLeft: w(1),
     backgroundColor: 'rgba(247, 55, 79, 0.1)',
     borderRadius: w(2),
+    minWidth: w(8),
+    minHeight: w(8),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   detailRow: {
     flexDirection: 'row',

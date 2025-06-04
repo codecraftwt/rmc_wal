@@ -194,6 +194,7 @@ const EditOrder = ({ route, navigation }) => {
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState(new Date());
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const { productGrades, productGradesLoading, customers, customersLoading } = useSelector(
     state => state.order,
@@ -243,13 +244,39 @@ const EditOrder = ({ route, navigation }) => {
     }
   }, [productGrades, formData.product_grade_id]);
 
+  // Initial data fetch with loading state
   useEffect(() => {
-    dispatch(fetchProductGrades());
-    dispatch(fetchCustomers());
+    const fetchInitialData = async () => {
+      try {
+        setIsInitialLoading(true);
+        await Promise.all([
+          dispatch(fetchProductGrades()).unwrap(),
+          dispatch(fetchCustomers()).unwrap()
+        ]);
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+        Alert.alert('Error', 'Failed to load initial data. Please try again.');
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, [dispatch]);
 
   useEffect(() => {
     const backAction = () => {
+      if (isUpdating) {
+        Alert.alert(
+          'Warning',
+          'Update in progress. Are you sure you want to leave?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Leave', onPress: () => navigation.goBack() }
+          ]
+        );
+        return true;
+      }
       navigation.goBack();
       return true;
     };
@@ -258,7 +285,7 @@ const EditOrder = ({ route, navigation }) => {
       backAction,
     );
     return () => backHandler.remove();
-  }, [navigation]);
+  }, [navigation, isUpdating]);
 
   const handleCustomerSelect = customerId => {
     const selectedCustomer = customers.find(c => c.id === customerId);
@@ -272,8 +299,10 @@ const EditOrder = ({ route, navigation }) => {
   };
 
   const handleUpdate = async () => {
+    // Show loading immediately
+    setIsUpdating(true);
+
     try {
-      setIsUpdating(true);
       // Check if any required field is empty or undefined
       if (
         !formData.customer_id ||
@@ -284,14 +313,11 @@ const EditOrder = ({ route, navigation }) => {
         !formData.address ||
         !formData.order_type
       ) {
-        Alert.alert('Error', 'Please fill in all required fields');
         setIsUpdating(false);
+        Alert.alert('Error', 'Please fill in all required fields');
         return;
       }
 
-      // Find the selected customer from the customers list
-      const selectedCustomer = customers?.find(c => c.id === formData.customer_id);
-      
       const formattedData = {
         ...formData,
         customer_details: formData.customer_id?.toString(),
@@ -303,33 +329,25 @@ const EditOrder = ({ route, navigation }) => {
         product_grade_id: formData.product_grade_id?.toString(),
         confirm: formData.confirm?.toString(),
       };
-      console.log("formattedData", formattedData)
 
       const resultAction = await dispatch(
         editUpcomingOrder({ id: order.id, orderData: formattedData }),
       );
 
       if (editUpcomingOrder.fulfilled.match(resultAction)) {
-        setIsUpdating(false);
-        Alert.alert(
-          'Success',
-          'Order updated successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('UpcomingOrders'),
-            },
-          ],
-          { cancelable: false },
-        );
+        // Navigate immediately on success
+        navigation.navigate('UpcomingOrders', {
+          showSuccess: true,
+          message: 'Order has been updated successfully!'
+        });
       } else {
-        setIsUpdating(false);
-        const errorMessage = resultAction.payload;
+        const errorMessage = resultAction.payload || 'Failed to update order';
         Alert.alert('Error', errorMessage);
       }
     } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
       setIsUpdating(false);
-      Alert.alert('Error', 'An unexpected error occurred');
     }
   };
   const handleChange = (field, value) => {
@@ -357,6 +375,16 @@ const EditOrder = ({ route, navigation }) => {
   useEffect(() => {
     console.log('Updated formData:', formData,);
   }, [formData]);
+
+  if (isInitialLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#F7374F" />
+        <Text style={styles.loadingText}>Loading order details...</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <LinearGradient
@@ -374,10 +402,13 @@ const EditOrder = ({ route, navigation }) => {
         />
         {isUpdating && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#F7374F" />
+            <View style={styles.loadingContent}>
+              <ActivityIndicator size="large" color="#F7374F" />
+              <Text style={styles.loadingText}>Updating order...</Text>
+            </View>
           </View>
         )}
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.content}
           scrollEnabled={!isUpdating}>
           <View style={[styles.card, isUpdating && styles.disabledCard]}>
@@ -571,14 +602,17 @@ const EditOrder = ({ route, navigation }) => {
             <LinearGradient
               colors={['#F7374F', '#FF6B6B']}
               style={styles.updateButton}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 0}}>
-              <TouchableOpacity 
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}>
+              <TouchableOpacity
                 onPress={handleUpdate}
                 disabled={isUpdating}
                 style={styles.updateButtonInner}>
                 {isUpdating ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <View style={styles.buttonLoadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={[styles.updateButtonText, styles.loadingText]}>Updating...</Text>
+                  </View>
                 ) : (
                   <Text style={styles.updateButtonText}>Update Order</Text>
                 )}
@@ -691,9 +725,42 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   loadingContainer: {
-    height: h(6),
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#F8FAFF',
+  },
+  loadingContent: {
+    backgroundColor: 'white',
+    padding: w(4),
+    borderRadius: w(2),
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    minWidth: w(40),
+  },
+  loadingText: {
+    marginTop: h(2),
+    fontSize: f(2),
+    color: '#666',
+    textAlign: 'center',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  disabledCard: {
+    opacity: 0.7,
   },
   dateInput: {
     backgroundColor: '#F5F7FA',
@@ -823,19 +890,30 @@ const styles = StyleSheet.create({
     marginTop: h(2),
     fontFamily: 'Poppins-Regular',
   },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    justifyContent: 'center',
+  buttonLoadingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 1000,
+    justifyContent: 'center',
   },
-  disabledCard: {
-    opacity: 0.7,
+  loadingText: {
+    marginLeft: w(2),
+  },
+  updateButton: {
+    backgroundColor: '#F7374F',
+    paddingVertical: h(1.5),
+    borderRadius: w(2),
+    marginTop: h(2),
+  },
+  updateButtonInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: h(5),
+  },
+  updateButtonText: {
+    fontSize: f(2.2),
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
 });
 export default EditOrder;
