@@ -1,11 +1,11 @@
-import React,{useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  BackHandler
+  BackHandler,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -15,19 +15,19 @@ import Header from '../../component/Header';
 
 const OrderDetails = ({route, navigation}) => {
   const {order} = route.params;
-    useEffect(() => {
-      const backAction = () => {
-        navigation.goBack(); 
-        return true;
-      };
-  
-      const backHandler = BackHandler.addEventListener(
-        'hardwareBackPress',
-        backAction
-      );
-  
-      return () => backHandler.remove();
-    }, [navigation]);
+  useEffect(() => {
+    const backAction = () => {
+      navigation.goBack();
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   return (
     <>
@@ -39,10 +39,28 @@ const OrderDetails = ({route, navigation}) => {
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
       <View style={styles.container}>
-        <Header title="Order Details" navigation={navigation} showBackButton='arrow-back'/>
+        <Header
+          title="Order Details"
+          navigation={navigation}
+          showBackButton="arrow-back"
+        />
 
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.card}>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor:
+                    order.confirm === '1' ? '#4CAF50' : '#FFC107',
+                  shadowColor:
+                    order.confirm === '1' ? '#4CAF50' : '#FFC107',
+                },
+              ]}>
+              <Text style={styles.statusText}>
+                {order.confirm === '1' ? 'Confirmed' : 'Pending'}
+              </Text>
+            </View>
             <View style={styles.cardHeader}>
               <View style={styles.customerInfo}>
                 <Icon
@@ -52,20 +70,6 @@ const OrderDetails = ({route, navigation}) => {
                 />
                 <Text style={styles.customerName}>
                   {order.customer_details}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor:
-                      order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
-                    shadowColor:
-                      order.confirm === 'confirmed' ? '#4CAF50' : '#FFC107',
-                  },
-                ]}>
-                <Text style={styles.statusText}>
-                  {order.confirm === 'confirmed' ? 'Confirmed' : 'Pending'}
                 </Text>
               </View>
             </View>
@@ -202,6 +206,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 5,
+    position: 'relative',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -211,6 +216,7 @@ const styles = StyleSheet.create({
     paddingBottom: h(2),
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    marginTop:h(3.8)
   },
   customerInfo: {
     flexDirection: 'row',
@@ -224,14 +230,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statusBadge: {
-    paddingHorizontal: w(3.5),
-    paddingVertical: h(0.8),
+    // paddingHorizontal: w(3.5),
+    // paddingVertical: h(0.8),
+    // borderRadius: w(5),
+    // shadowColor: '#000',
+    // shadowOffset: {width: 0, height: 2},
+    // shadowOpacity: 0.3,
+    // shadowRadius: 4,
+    // elevation: 3,
+    position: 'absolute',
+    top: w(2.8),
+    right: w(2), 
+    paddingHorizontal: w(5.8),
+    paddingVertical: h(0.88),
     borderRadius: w(5),
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
+    alignSelf: 'flex-start',
+    // marginBottom:10
   },
   statusText: {
     fontSize: f(1.8),
