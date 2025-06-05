@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     View,
     Text,
@@ -11,6 +11,8 @@ import {
     Modal,
     TouchableWithoutFeedback,
     ActivityIndicator,
+    Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -41,12 +43,10 @@ const CustomDropdown = ({
             if (selectedItem) {
                 setSelectedLabel(getLabel(selectedItem));
             } else {
-                // If value exists but not found in items, try to find by direct value match
                 const directMatch = items.find(item => item === value);
                 if (directMatch) {
                     setSelectedLabel(getLabel(directMatch));
                 } else {
-                    // If it's a language value, capitalize it
                     if (typeof value === 'string' && value.length > 0) {
                         setSelectedLabel(value.charAt(0).toUpperCase() + value.slice(1));
                     } else {
@@ -321,35 +321,45 @@ const EditCustomer = ({ route, navigation }) => {
         }
     }, [editCustomerSuccess, editCustomerError, navigation, dispatch]);
 
-    return (
-        <>
-            <LinearGradient
-                colors={['#F7374F', '#FF6B6B']}
-                style={styles.statusBarArea}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}>
-                <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
-            </LinearGradient>
-            <View style={styles.container}>
-                <Header
-                    title="Edit Customer"
-                    navigation={navigation}
-                    showBackButton="arrow-back"
-                />
+  return (
+    <>
+      <LinearGradient
+        colors={['#F7374F', '#FF6B6B']}
+        style={styles.statusBarArea}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 0}}>
+        <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
+      </LinearGradient>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <Header
+          title="Edit Customer"
+          navigation={navigation}
+          showBackButton="arrow-back"
+        />
 
-                <ScrollView contentContainerStyle={styles.content}>
-                    <View style={styles.card}>
-                        <View style={styles.detailSection}>
-                            <View style={styles.sectionHeader}>
-                                <LinearGradient
-                                    colors={['#F7374F', '#FF8A65']}
-                                    style={styles.sectionIcon}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}>
-                                    <Icon name="information-circle-outline" size={f(2.5)} color="white" />
-                                </LinearGradient>
-                                <Text style={styles.sectionTitle}>Basic Information</Text>
-                            </View>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.card}>
+            <View style={styles.detailSection}>
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['#F7374F', '#FF8A65']}
+                  style={styles.sectionIcon}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 1}}>
+                  <Icon
+                    name="information-circle-outline"
+                    size={f(2.5)}
+                    color="white"
+                  />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>Basic Information</Text>
+              </View>
 
                             <FormInput
                                 icon="business-outline"
@@ -467,20 +477,20 @@ const EditCustomer = ({ route, navigation }) => {
                             </View>
                         </View>
 
-                        <View style={styles.detailSection}>
-                            <TouchableOpacity
-                                style={styles.sectionHeader}
-                                onPress={() => setBillingExpanded(!billingExpanded)}>
-                                <View style={styles.sectionHeaderContent}>
-                                    <Icon name="location-outline" size={f(2.5)} color="#F7374F" />
-                                    <Text style={styles.sectionTitle}>Billing Address</Text>
-                                </View>
-                                <Icon
-                                    name={billingExpanded ? 'chevron-up' : 'chevron-down'}
-                                    size={f(2.5)}
-                                    color="#F7374F"
-                                />
-                            </TouchableOpacity>
+            <View style={styles.detailSection}>
+              <TouchableOpacity
+                style={styles.sectionHeader}
+                onPress={() => setBillingExpanded(!billingExpanded)}>
+                <View style={styles.sectionHeaderContent}>
+                  <Icon name="location-outline" size={f(2.5)} color="#F7374F" />
+                  <Text style={styles.sectionTitle}>Billing Address</Text>
+                </View>
+                <Icon
+                  name={billingExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={f(2.5)}
+                  color="#F7374F"
+                />
+              </TouchableOpacity>
 
                             {billingExpanded && (
                                 <View style={styles.addressSection}>
@@ -642,7 +652,7 @@ const EditCustomer = ({ route, navigation }) => {
                         </View>
                     </View>
                 </ScrollView>
-            </View>
+               </KeyboardAvoidingView>
         </>
     );
 };
@@ -679,7 +689,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: w(4),
-        paddingBottom: h(4),
+        paddingBottom: Platform.OS === 'android' ? h(4) : h(8),
     },
     card: {
         backgroundColor: '#FFFFFF',
