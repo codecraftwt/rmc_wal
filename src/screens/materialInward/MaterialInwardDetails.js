@@ -1,4 +1,4 @@
-import React,{useEffect} from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -31,13 +31,17 @@ const MaterialInwardDetails = ({route, navigation}) => {
       return () => backHandler.remove();
     }, [navigation]);
 
-  const renderDetailRow = (iconName, label, value, isAmount = false) => (
+  const renderDetailRow = (iconName, label, value, isAmount = false, isStatus = false) => (
     <View style={styles.detailRow}>
       <View style={styles.iconContainer}>
         <Icon2 name={iconName} size={f(2.4)} color="#F7374F" />
       </View>
       <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, isAmount && styles.amountValue]}>
+      <Text style={[
+        styles.value,
+        isAmount && styles.amountValue,
+        isStatus && value === 'Paid' && styles.paidStatusText
+      ]}>
         {value}
         {isAmount && !value.includes('₹') && '₹'}
       </Text>
@@ -84,9 +88,8 @@ const MaterialInwardDetails = ({route, navigation}) => {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Weight Details</Text>
-            {renderDetailRow('scale', 'Load Weight', material.load_weight)}
-            {renderDetailRow('scale', 'Unload Weight', material.unload_weight
-)}
+            {renderDetailRow('scale', 'Load Weight', `${parseFloat(material.load_weight).toFixed(2)} kg`)}
+            {renderDetailRow('scale', 'Unload Weight', `${parseFloat(material.unload_weight).toFixed(2)} kg`)}
           </View>
 
           <View style={styles.section}>
@@ -95,33 +98,41 @@ const MaterialInwardDetails = ({route, navigation}) => {
               'currency-rupee',
               'Per kg Cost',
               material.per_kg_amount
-,
+              ,
               true,
             )}
             {renderDetailRow(
               'receipt-long',
               'Total Bill',
               material.total_bill_amount
-,
+              ,
               true,
             )}
             {renderDetailRow(
               'credit-score',
               'Paid Amount',
               material.paid_amount
-,
+              ,
               true,
             )}
-            {/* {renderDetailRow(
-              'currency-rupee',
+            
+            {renderDetailRow(
+              'money-off',
               'Remaining Amount',
-              material.remaining_amount,
+              (material.total_bill_amount - material.paid_amount).toFixed(2),
               true,
-            )} */}
+            )}
             {renderDetailRow(
               'payment',
               'Payment Method',
-              material.payment_method,
+              material.payment_method_name,
+            )}
+            {renderDetailRow(
+              'payment',
+              'Payment Status',
+              material.payment_status === '1' ? 'Paid' : 'Pending',
+              false,
+              true
             )}
           </View>
 
@@ -134,13 +145,13 @@ const MaterialInwardDetails = ({route, navigation}) => {
             </View>
           </View>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.editBtn}
-            onPress={() => navigation.navigate('EditInwardScreen', {material})}
+            onPress={() => navigation.navigate('EditInwardScreen', { material })}
             activeOpacity={0.8}>
             <Icon name="create-outline" size={f(2.4)} color="white" />
             <Text style={styles.editBtnText}>Edit Details</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
     </>
@@ -267,6 +278,11 @@ const styles = StyleSheet.create({
     fontSize: f(2.1),
     fontWeight: '600',
     marginLeft: w(2),
+  },
+  paidStatusText: {
+    color: '#4CAF50',
+    fontWeight: '700',
+    fontSize: f(2.1),
   },
 });
 

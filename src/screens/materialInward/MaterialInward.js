@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   SafeAreaView,
   Platform,
+  Animated,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -24,7 +25,9 @@ const MaterialInward = ({ navigation }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
   const [filteredData, setFilteredData] = useState([]);
+  const [tabAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     dispatch(fetchMaterialInward());
@@ -41,28 +44,88 @@ const MaterialInward = ({ navigation }) => {
   }, [navigation]);
 
   useEffect(() => {
-    const filtered = data.filter(item => {
-      const materialMatch = item.material_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const vehicleMatch = item.vehicle_number
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const descriptionMatch = item.description
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      return materialMatch || vehicleMatch || descriptionMatch;
-    });
+    let filtered = data;
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(item => {
+        const materialMatch = item.material_name
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        const vehicleMatch = item.vehicle_number
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        const descriptionMatch = item.description
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
+        return materialMatch || vehicleMatch || descriptionMatch;
+      });
+    }
+
+    // Apply status filter
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(item =>
+        activeTab === 'paid' ? item.payment_status === '1' : item.payment_status !== '1'
+      );
+    }
+
     setFilteredData(filtered);
-  }, [searchQuery, data]);
+  }, [searchQuery, data, activeTab]);
 
   const toggleShowAll = () => setShowAll(!showAll);
 
-  const displayedData = showAll
-    ? searchQuery
-      ? filteredData
-      : data
-    : (searchQuery ? filteredData : data).slice(0, 3);
+  const displayedData = showAll ? filteredData : filteredData.slice(0, 3);
+
+  const handleTabPress = (tab) => {
+    setActiveTab(tab);
+    Animated.spring(tabAnimation, {
+      toValue: tab === 'all' ? 0 : tab === 'pending' ? 1 : 2,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const renderTabBar = () => (
+    <View style={styles.tabContainer}>
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+          onPress={() => handleTabPress('all')}>
+          <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+            All
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'pending' && styles.activeTab]}
+          onPress={() => handleTabPress('pending')}>
+          <Text style={[styles.tabText, activeTab === 'pending' && styles.activeTabText]}>
+            Pending
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'paid' && styles.activeTab]}
+          onPress={() => handleTabPress('paid')}>
+          <Text style={[styles.tabText, activeTab === 'paid' && styles.activeTabText]}>
+            Paid
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <Animated.View
+        style={[
+          styles.tabIndicator,
+          {
+            transform: [
+              {
+                translateX: tabAnimation.interpolate({
+                  inputRange: [0, 1, 2],
+                  outputRange: [w(1), w(34), w(64)],
+                }),
+              },
+            ],
+          },
+        ]}
+      />
+    </View>
+  );
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -199,6 +262,8 @@ const MaterialInward = ({ navigation }) => {
             />
           </View>
 
+          {renderTabBar()}
+
           <FlatList
             data={displayedData}
             keyExtractor={item => item.id}
@@ -207,9 +272,15 @@ const MaterialInward = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
               <View style={styles.listHeaderContainer}>
-                <Text style={styles.listHeader}>Recent Material Inwards</Text>
+                <Text style={styles.listHeader}>
+                  {activeTab === 'all'
+                    ? 'Recent Material Inwards'
+                    : activeTab === 'pending'
+                      ? 'Pending Material Inwards'
+                      : 'Paid Material Inwards'}
+                </Text>
 
-                {(searchQuery ? filteredData : data).length > 3 && (
+                {filteredData.length > 3 && (
                   <TouchableOpacity
                     onPress={toggleShowAll}
                     style={styles.seeAllButton}>
@@ -226,6 +297,14 @@ const MaterialInward = ({ navigation }) => {
                     </View>
                   </TouchableOpacity>
                 )}
+              </View>
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Icon name="document-text-outline" size={f(8)} color="#999" />
+                <Text style={styles.emptyText}>
+                  No {activeTab === 'all' ? '' : activeTab} material inward records found
+                </Text>
               </View>
             }
           />
@@ -414,6 +493,61 @@ const styles = StyleSheet.create({
   },
   seeAllIcon: {
     marginLeft: w(1),
+  },
+  tabContainer: {
+    marginBottom: h(2),
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: w(2),
+    padding: w(0.5),
+    marginBottom: h(1),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: h(1.5),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: w(1.5),
+  },
+  activeTab: {
+    backgroundColor: '#F7374F',
+  },
+  tabText: {
+    fontSize: f(2),
+    fontFamily: 'Poppins-Medium',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: w(27),
+    height: h(0.3),
+    backgroundColor: '#F7374F',
+    borderRadius: w(0.15),
+    left: w(0.5),
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: h(5),
+  },
+  emptyText: {
+    fontSize: f(2),
+    color: '#666',
+    fontFamily: 'Poppins-Regular',
+    marginTop: h(2),
+    textAlign: 'center',
   },
 });
 
