@@ -48,12 +48,13 @@ const Header = ({
 
 const styles = StyleSheet.create({
   header: {
-    paddingBottom: h(4),
+    // paddingBottom: h(4),
+    paddingBottom: Platform.OS === 'android' ? h(4) : h(0),
     borderBottomLeftRadius: w(8),
     borderBottomRightRadius: w(8),
     paddingTop: Platform.OS === 'android' ? h(4.6) : 0,
     paddingHorizontal: Platform.OS === 'android' ? w(2) : 0,
-    height: Platform.OS === 'ios' ? h(20) : h(14),
+    height: Platform.OS === 'ios' ? h(15) : h(14),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

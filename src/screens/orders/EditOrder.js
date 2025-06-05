@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
+  Platform,
 } from 'react-native';
 import { h, w, f } from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
@@ -693,23 +694,23 @@ const styles = StyleSheet.create({
   statusButtonTextActive: {
     color: '#FFFFFF',
   },
-  updateButton: {
-    backgroundColor: '#F7374F',
-    paddingVertical: h(1.5),
-    borderRadius: w(2),
-    marginTop: h(2),
-  },
-  updateButtonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: h(5),
-  },
-  updateButtonText: {
-    fontSize: f(2.2),
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
-  },
+  // updateButton: {
+  //   backgroundColor: '#F7374F',
+  //   paddingVertical: h(1),
+  //   borderRadius: w(2),
+  //   marginTop: h(2),
+  // },
+  // updateButtonInner: {
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   minHeight: h(4),
+  // },
+  // updateButtonText: {
+  //   fontSize: f(2.2),
+  //   color: '#FFFFFF',
+  //   fontWeight: '600',
+  //   fontFamily: 'Poppins-SemiBold',
+  // },
   pickerContainer: {
     backgroundColor: '#F5F7FA',
     borderRadius: w(2),
@@ -898,7 +899,8 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     backgroundColor: '#F7374F',
-    paddingVertical: h(1.5),
+    // paddingVertical: h(1.5),
+    paddingVertical: Platform.OS === 'android' ? h(1.5) : h(0),
     borderRadius: w(2),
     marginTop: h(2),
   },

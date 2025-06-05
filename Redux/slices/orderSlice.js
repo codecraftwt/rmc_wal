@@ -249,6 +249,32 @@ export const editCustomer = createAsyncThunk(
   }
 );
 
+export const deleteCustomer = createAsyncThunk(
+  'order/deleteCustomer',
+  async (customerId, { rejectWithValue }) => {
+    try {
+      const formData = new FormData();
+      formData.append('id', customerId.toString());
+
+      const response = await AxiosInstance.post(
+        '/delete_customers_api',
+        formData,
+      );
+
+      console.log('Delete response:', response.data);
+
+      if (response.data.status) {
+        return { ...response.data, deletedId: customerId };
+      } else {
+        return rejectWithValue(response.data.message || 'Failed to delete customer');
+      }
+    } catch (error) {
+      console.error('Delete Customer Error:', error);
+      return rejectWithValue(error.response?.data?.message || error.message || 'Failed to delete customer');
+    }
+  },
+);
+
 const initialState = {
   loading: false,
   success: false,
@@ -460,6 +486,24 @@ const orderSlice = createSlice({
         state.editCustomerLoading = false;
         state.editCustomerSuccess = false;
         state.editCustomerError = action.payload;
+      });
+
+    // Add Delete Customer cases
+    builder
+      .addCase(deleteCustomer.pending, state => {
+        state.customersLoading = true;
+        state.customersError = null;
+      })
+      .addCase(deleteCustomer.fulfilled, (state, action) => {
+        state.customersLoading = false;
+        // Remove the deleted customer from the state
+        state.customers = state.customers.filter(
+          customer => customer.id.toString() !== action.payload.deletedId.toString()
+        );
+      })
+      .addCase(deleteCustomer.rejected, (state, action) => {
+        state.customersLoading = false;
+        state.customersError = action.payload?.message || 'Failed to delete customer';
       });
   },
 });

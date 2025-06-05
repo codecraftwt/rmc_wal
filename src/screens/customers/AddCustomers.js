@@ -340,7 +340,7 @@ const AddCustomers = ({ navigation }) => {
             navigation={navigation}
             showBackButton="arrow-back"
           />
-          <ScrollView contentContainerStyle={styles.formContainer}>
+          <ScrollView contentContainerStyle={styles.formContainer} showsVerticalScrollIndicator={false}>
             <View style={styles.section}>
               <Text style={styles.formTitle}>Customer Details</Text>
               <FormField
@@ -406,8 +406,8 @@ const AddCustomers = ({ navigation }) => {
                   placeholder="Select a country"
                   loading={customerFormDataLoading}
                   style={styles.pickerContainer}
-                  getLabel={item => item.long_name} //how to display each item means display by name
-                  getValue={item => item.country_id}//what value to return on selection means save id
+                  getLabel={item => item.long_name} 
+                  getValue={item => item.country_id}
                 />
               </View>
               <FormField
@@ -825,6 +825,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    // backgroundColor:'red'
   },
   formContainer: {
     padding: w(5),
@@ -838,19 +839,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
-    marginBottom: h(14.4),
+    marginBottom: Platform.OS === 'ios'? h(17) : h(15.5),
   },
   submitGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: h(2),
+    paddingVertical: Platform.OS === 'ios' ? h(0) : h(2),
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: f(2.2),
+    fontSize: f(2.4),
     fontFamily: 'Poppins-SemiBold',
     marginRight: w(2),
+    paddingVertical: Platform.OS === 'ios' ? h(2.2) : h(0)
   },
   submitIcon: {
     marginLeft: w(1),
@@ -910,7 +912,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: w(4),
+    padding: Platform.OS === 'android' ? w(1) : 0,
     borderTopLeftRadius: w(3),
     borderTopRightRadius: w(3),
   },
@@ -919,9 +921,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Poppins-SemiBold',
+    paddingVertical: Platform.OS === 'android' ? 0 : h(2),
+    marginLeft: Platform.OS === 'android' ? 0 : h(1)
   },
   closeButton: {
     padding: w(1),
+    marginRight: Platform.OS === 'android' ? 0 : h(1)
   },
   searchContainer: {
     padding: w(3),

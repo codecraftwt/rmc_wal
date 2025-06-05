@@ -746,6 +746,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: w(5),
     marginBottom: h(1),
+    paddingTop: Platform.OS === 'ios' ? h(1.4) : 0
   },
   sectionTitle: {
     fontSize: f(2.5),
@@ -844,7 +845,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: w(4),
-    marginTop: Platform.OS === 'android' ? h(2) : 0,
+    marginTop: Platform.OS === 'android' ? h(2) : h(2.2),
     marginBottom: h(1),
   },
   dateFilterButton: {

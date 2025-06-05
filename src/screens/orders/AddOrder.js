@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,11 +16,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import {h, w, f} from 'walstar-rn-responsive';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { h, w, f } from 'walstar-rn-responsive';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import DatePicker from 'react-native-date-picker';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   addUpcomingOrder,
   resetAddOrderState,
@@ -29,7 +29,7 @@ import {
   fetchProductGrades,
   fetchCustomers,
 } from '../../../Redux/slices/orderSlice';
-import {Picker} from '@react-native-picker/picker';
+import { Picker } from '@react-native-picker/picker';
 
 const CustomDropdown = ({
   value,
@@ -98,8 +98,8 @@ const CustomDropdown = ({
                 <LinearGradient
                   colors={['#F7374F', '#FF6B6B']}
                   style={styles.dropdownHeader}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}>
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}>
                   <Text style={styles.dropdownTitle}>{placeholder}</Text>
                   <TouchableOpacity
                     onPress={handleClose}
@@ -144,14 +144,14 @@ const CustomDropdown = ({
                           style={[
                             styles.dropdownItem,
                             value === getValue(item) &&
-                              styles.dropdownItemSelected,
+                            styles.dropdownItemSelected,
                           ]}
                           onPress={() => handleSelect(item)}>
                           <Text
                             style={[
                               styles.dropdownItemText,
                               value === getValue(item) &&
-                                styles.dropdownItemTextSelected,
+                              styles.dropdownItemTextSelected,
                             ]}>
                             {getLabel(item)}
                           </Text>
@@ -175,14 +175,14 @@ const CustomDropdown = ({
   );
 };
 
-const AddOrder = ({navigation}) => {
+const AddOrder = ({ navigation }) => {
   const dispatch = useDispatch();
 
-  const {loading, success, error} = useSelector(state => state.addOrder);
-  const {productGrades, productGradesLoading} = useSelector(
+  const { loading, success, error } = useSelector(state => state.addOrder);
+  const { productGrades, productGradesLoading } = useSelector(
     state => state.order,
   );
-  const {customers, customersLoading} = useSelector(state => state.order);
+  const { customers, customersLoading } = useSelector(state => state.order);
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -309,35 +309,35 @@ const AddOrder = ({navigation}) => {
   };
 
   const orderTypes = [
-    {label: 'Pumping', value: '1'},
-    {label: 'Dumping', value: '2'},
+    { label: 'Pumping', value: '1' },
+    { label: 'Dumping', value: '2' },
   ];
   return (
     <>
       <LinearGradient
         colors={['#F7374F', '#FF6B6B']}
         style={styles.statusBarArea}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 0}}>
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingContainer}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
         <LinearGradient
           colors={['#F8FAFF', '#F0F4FF']}
           style={styles.container}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}>
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}>
           <Header
             title="Add New Order"
             navigation={navigation}
             showBackButton="arrow-back"
           />
 
-          <ScrollView 
+          <ScrollView
             contentContainerStyle={styles.formContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
@@ -452,7 +452,7 @@ const AddOrder = ({navigation}) => {
                 <Text
                   style={[
                     styles.dateInputText,
-                    !formData.date && {color: '#999'},
+                    !formData.date && { color: '#999' },
                   ]}>
                   {formData.date || 'Select a date'}
                 </Text>
@@ -488,7 +488,7 @@ const AddOrder = ({navigation}) => {
                 <Text
                   style={[
                     styles.dateInputText,
-                    !formData.on_site_time && {color: '#999'},
+                    !formData.on_site_time && { color: '#999' },
                   ]}>
                   {formData.on_site_time || 'Select time'}
                 </Text>
@@ -512,36 +512,31 @@ const AddOrder = ({navigation}) => {
               multiline
               required
             />
-            {/* <FormField
-              icon="pricetag-outline"
-              label="Type"
-              value={formData.order_type}
-              onChangeText={text => handleChange('order_type', text)}
-              placeholder="Pumping/Dumping etc."
-            /> */}
 
-            <View style={{marginBottom: 20}}>
-              <Text style={{fontSize: 16, marginBottom: 8}}>Type</Text>
-              <View
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ccc',
-                  borderRadius: 5,
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                }}>
-                <Picker
-                  selectedValue={formData.order_type}
-                  onValueChange={itemValue =>
-                    setFormData(prev => ({...prev, order_type: itemValue}))
-                  }
-                  mode="dropdown"
-                  style={{height: 55}}>
-                  <Picker.Item label="Select Type" value="" />
-                  <Picker.Item label="Pumping" value="Pumping" />
-                  <Picker.Item label="Dumping" value="Dumping" />
-                </Picker>
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="pricetag-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Type<Text style={styles.required}> *</Text>
+                </Text>
               </View>
+              <CustomDropdown
+                value={formData.order_type}
+                onValueChange={value => handleChange('order_type', value)}
+                items={[
+                  { id: 'Pumping', name: 'Pumping' },
+                  { id: 'Dumping', name: 'Dumping' }
+                ]}
+                placeholder="Select Type"
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
+              />
             </View>
 
             <FormField
@@ -551,28 +546,31 @@ const AddOrder = ({navigation}) => {
               onChangeText={text => handleChange('description', text)}
               multiline
             />
-            <View style={{marginBottom: 20}}>
-              <Text style={{fontSize: 16, marginBottom: 8}}>Status</Text>
-              <View
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#ccc',
-                  borderRadius: 5,
-                  overflow: 'hidden',
-                  backgroundColor: '#ffffff',
-                }}>
-                <Picker
-                  selectedValue={formData.confirm}
-                  onValueChange={itemValue =>
-                    setFormData(prev => ({...prev, confirm: itemValue}))
-                  }
-                  mode="dropdown"
-                  style={{height: 55}}>
-                  <Picker.Item label="Select Status" value="" />
-                  <Picker.Item label="Pending" value="0" />
-                  <Picker.Item label="Confirm" value="1" />
-                </Picker>
+
+            <View style={styles.fieldContainer}>
+              <View style={styles.fieldLabel}>
+                <Icon
+                  name="checkmark-circle-outline"
+                  size={f(2.5)}
+                  color="#F7374F"
+                  style={styles.fieldIcon}
+                />
+                <Text style={styles.labelText}>
+                  Status<Text style={styles.required}> *</Text>
+                </Text>
               </View>
+              <CustomDropdown
+                value={formData.confirm}
+                onValueChange={value => handleChange('confirm', value)}
+                items={[
+                  { id: '0', name: 'Pending' },
+                  { id: '1', name: 'Confirm' }
+                ]}
+                placeholder="Select Status"
+                style={styles.pickerContainer}
+                getLabel={item => item.name}
+                getValue={item => item.id}
+              />
             </View>
 
             <TouchableOpacity
@@ -582,8 +580,8 @@ const AddOrder = ({navigation}) => {
               <LinearGradient
                 colors={['#4CAF50', '#66BB6A']}
                 style={styles.submitGradient}
-                start={{x: 0, y: 0}}
-                end={{x: 1, y: 1}}>
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}>
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
@@ -661,7 +659,7 @@ const FormField = ({
         <>
           {unit && <Text style={styles.unitText}>{unit}</Text>}
           <TextInput
-            style={[styles.input, unit && {paddingLeft: w(8)}]}
+            style={[styles.input, unit && { paddingLeft: w(8) }]}
             value={value}
             onChangeText={onChangeText}
             {...props}
@@ -672,23 +670,6 @@ const FormField = ({
   </View>
 );
 const styles = StyleSheet.create({
-  pickerContainer: {
-    backgroundColor: 'white',
-    borderRadius: w(2),
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: h(6),
-    width: '100%',
-    color: '#333',
-  },
   statusBarArea: {
     height: h(2),
   },
@@ -698,10 +679,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backButton: {
-    position: 'absolute',
-    left: w(4),
-    padding: w(1),
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
   formContainer: {
     padding: w(5),
@@ -726,67 +705,6 @@ const styles = StyleSheet.create({
   required: {
     color: '#F7374F',
   },
-  input: {
-    backgroundColor: 'white',
-    borderRadius: w(2),
-    padding: w(3),
-    fontSize: f(2),
-    fontFamily: 'Poppins-Regular',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  submitButton: {
-    marginTop: h(3),
-    borderRadius: w(2),
-    overflow: 'hidden',
-    shadowColor: '#4CAF50',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  submitGradient: {
-    paddingVertical: h(1.8),
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    fontSize: f(2.2),
-    fontFamily: 'Poppins-SemiBold',
-    color: 'white',
-    letterSpacing: 0.5,
-  },
-  submitIcon: {
-    marginLeft: w(2),
-  },
-  dateInput: {
-    backgroundColor: 'white',
-    borderRadius: w(2),
-    padding: w(3),
-    fontSize: f(2),
-    fontFamily: 'Poppins-Regular',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateInputText: {
-    fontSize: f(2),
-    fontFamily: 'Poppins-Regular',
-    color: '#333',
-  },
   inputContainer: {
     position: 'relative',
   },
@@ -795,24 +713,91 @@ const styles = StyleSheet.create({
     right: w(3),
     top: h(1.5),
     fontSize: f(2),
-    // color: '#888',
     color: 'black',
     zIndex: 1,
   },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#F5F7FA',
     borderRadius: w(2),
-    padding: w(2.8),
+    padding: Platform.OS === 'ios' ? h(2) : w(2.8),
     fontSize: f(2),
     borderWidth: 1,
     borderColor: '#E0E0E0',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    minHeight: Platform.OS === 'ios' ? h(5) : undefined,
   },
-    customDropdownContainer: {
+  pickerContainer: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: Platform.OS === 'ios' ? h(6) : h(5),
+    width: '100%',
+    color: '#333',
+  },
+  submitButton: {
+    marginTop: h(3),
+    borderRadius: w(2),
+    overflow: 'hidden',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
+    marginBottom: Platform.OS === 'ios' ? h(0) : h(2),
+  },
+  submitGradient: {
+    paddingVertical: Platform.OS === 'ios' ? h(0) : h(1.5),
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    fontSize: f(2.4),
+    fontFamily: 'Poppins-SemiBold',
+    color: 'white',
+    letterSpacing: 0.5,
+    paddingVertical: Platform.OS === 'ios' ? h(2) : h(0),
+  },
+  submitIcon: {
+    marginLeft: w(2),
+  },
+  dateInput: {
+    backgroundColor: '#F5F7FA',
+    borderRadius: w(2),
+    padding: Platform.OS === 'ios' ? h(2) : w(2.8),
+    fontSize: f(2),
+    fontFamily: 'Poppins-Regular',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: Platform.OS === 'ios' ? h(5) : undefined,
+  },
+  dateInputText: {
+    fontSize: f(2),
+    fontFamily: 'Poppins-Regular',
+    color: '#333',
+  },
+  customDropdownContainer: {
     width: '100%',
   },
   customDropdownButton: {
@@ -821,13 +806,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5F7FA',
     borderRadius: w(2),
-    padding: w(3),
+    padding: Platform.OS === 'ios' ? h(2) : w(2.8),
     borderWidth: 1,
     borderColor: '#E0E0E0',
+    minHeight: Platform.OS === 'ios' ? h(5) : undefined,
   },
   customDropdownButtonText: {
     fontSize: f(2),
     color: '#333',
+    fontFamily: 'Poppins-Regular',
   },
   modalOverlay: {
     flex: 1,
@@ -838,10 +825,10 @@ const styles = StyleSheet.create({
   dropdownContent: {
     backgroundColor: 'white',
     borderRadius: w(3),
-    width: '85%',
+    width: '90%',
     maxHeight: h(60),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
@@ -850,7 +837,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: w(4),
+    padding: Platform.OS === 'android' ? w(1) : w(4),
     borderTopLeftRadius: w(3),
     borderTopRightRadius: w(3),
   },
@@ -859,9 +846,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     fontFamily: 'Poppins-SemiBold',
+    paddingVertical: Platform.OS === 'android' ? 0 : h(2),
+    marginLeft: Platform.OS === 'android' ? 0 : h(1),
   },
   closeButton: {
     padding: w(1),
+    marginRight: Platform.OS === 'android' ? 0 : h(1),
   },
   searchContainer: {
     padding: w(3),
@@ -875,7 +865,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
     borderRadius: w(2),
     paddingHorizontal: w(3),
-    paddingVertical: w(2),
+    paddingVertical: Platform.OS === 'ios' ? h(1.5) : w(2),
   },
   searchIcon: {
     marginRight: w(2),
@@ -884,7 +874,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: f(2),
     color: '#333',
-    padding: w(2),
+    padding: Platform.OS === 'ios' ? h(1) : w(2),
     fontFamily: 'Poppins-Regular',
   },
   clearSearchButton: {
@@ -897,9 +887,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: w(3),
+    padding: Platform.OS === 'ios' ? h(2) : w(3),
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    minHeight: Platform.OS === 'ios' ? h(5) : undefined,
   },
   dropdownItemSelected: {
     backgroundColor: '#FFF5F6',
@@ -925,8 +916,10 @@ const styles = StyleSheet.create({
     marginTop: h(2),
     fontFamily: 'Poppins-Regular',
   },
-  keyboardAvoidingContainer: {
-    flex: 1,
+  loadingContainer: {
+    height: Platform.OS === 'ios' ? h(6) : h(5),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

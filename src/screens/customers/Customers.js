@@ -16,10 +16,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../component/Header';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCustomers } from '../../../Redux/slices/orderSlice';
+import { fetchCustomers, deleteCustomer } from '../../../Redux/slices/orderSlice';
 import { useFocusEffect } from '@react-navigation/native';
 
-const CustomerCard = ({ customer, onPress, navigation }) => {
+const CustomerCard = ({ customer, onPress, navigation, onDelete }) => {
     return (
         <TouchableOpacity
             style={styles.card}
@@ -44,26 +44,7 @@ const CustomerCard = ({ customer, onPress, navigation }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.iconButton, styles.deleteButton]}
-                        onPress={() => {
-                            Alert.alert(
-                                'Delete Customer',
-                                'Are you sure you want to delete this customer?',
-                                [
-                                    {
-                                        text: 'Cancel',
-                                        style: 'cancel',
-                                    },
-                                    {
-                                        text: 'Delete',
-                                        onPress: () => {
-                                            // Add delete functionality here
-                                            console.log('Delete customer:', customer.id);
-                                        },
-                                        style: 'destructive',
-                                    },
-                                ],
-                            );
-                        }}>
+                        onPress={() => onDelete(customer.id)}>
                         <Icon name="trash-outline" size={f(2.2)} color="#F7374F" />
                     </TouchableOpacity>
                 </View>
@@ -109,7 +90,7 @@ const Customers = ({ navigation }) => {
         state => state.order,
     );
 
-    console.log('customerspage', customers)
+    // console.log('customerspage', customers)
 
     useFocusEffect(
         useCallback(() => {
@@ -128,6 +109,43 @@ const Customers = ({ navigation }) => {
         );
         return () => backHandler.remove();
     }, [navigation]);
+
+    const handleDeleteCustomer = (customerId) => {
+        Alert.alert(
+            'Delete Customer',
+            'Are you sure you want to delete this customer?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Delete',
+                    onPress: async () => {
+                        try {
+                            const result = await dispatch(deleteCustomer(customerId)).unwrap();
+
+                            if (result.status) {
+                                const updatedCustomers = customers.filter(
+                                    customer => customer.id.toString() !== customerId.toString()
+                                );
+
+                                await dispatch(fetchCustomers());
+
+                                Alert.alert('Success', 'Customer deleted successfully');
+                            } else {
+                                Alert.alert('Error', result.message || 'Failed to delete customer');
+                            }
+                        } catch (error) {
+                            console.error('Delete error:', error);
+                            Alert.alert('Error', error.message || 'Failed to delete customer');
+                        }
+                    },
+                    style: 'destructive',
+                },
+            ],
+        );
+    };
 
     const filteredCustomers = customers.filter(customer =>
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -205,6 +223,7 @@ const Customers = ({ navigation }) => {
                             customer={item}
                             onPress={(customer) => navigation.navigate('CustomerDetails', { customer })}
                             navigation={navigation}
+                            onDelete={handleDeleteCustomer}
                         />
                     )}
                     keyExtractor={item => item.id}
