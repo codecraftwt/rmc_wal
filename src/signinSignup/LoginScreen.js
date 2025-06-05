@@ -25,7 +25,21 @@ const LoginScreen = ({navigation}) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
-  const {loading, error, user, token} = useSelector(state => state.auth);
+  const { loading, error, user, token } = useSelector(state => state.auth);
+
+  // useEffect(() => {
+  //   const backAction = () => {
+  //     navigation.goBack();
+  //     return true;
+  //   };
+
+  //   const backHandler = BackHandler.addEventListener(
+  //     'hardwareBackPress',
+  //     backAction,
+  //   );
+
+  //   return () => backHandler.remove();
+  // }, [navigation]);
 
   const handleLogin = () => {
     if (!username || !password) {
@@ -78,72 +92,67 @@ const LoginScreen = ({navigation}) => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.container}>
           <ScrollView
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled">
-            <View style={styles.header}>
+            <View style={styles.formContainer}>
               <Text style={styles.title}>Welcome Back!</Text>
               <Text style={styles.subtitle}>Sign in to continue</Text>
-            </View>
 
-            <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
-                <Icon name="person-outline" size={f(2.5)} style={styles.icon} />
+                <Icon name="mail-outline" size={f(2.5)} color="#FFF" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Username"
-                  placeholderTextColor="#888"
+                  placeholder="Email"
+                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
                   value={username}
                   onChangeText={setUsername}
+                  keyboardType="email-address"
                   autoCapitalize="none"
+                  editable={!loading}
                 />
               </View>
 
               <View style={styles.inputContainer}>
-                <Icon
-                  name="lock-closed-outline"
-                  size={f(2.5)}
-                  style={styles.icon}
-                />
+                <Icon name="lock-closed-outline" size={f(2.5)} color="#FFF" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Password"
-                  placeholderTextColor="#888"
+                  placeholderTextColor="rgba(255, 255, 255, 0.7)"
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
+                  editable={!loading}
                 />
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
-                  style={styles.eyeIcon}>
+                  style={styles.eyeIcon}
+                  disabled={loading}>
                   <Icon
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={f(2.5)}
-                    color="#888"
+                    color="#FFF"
                   />
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity
-                style={[styles.button, loading && styles.disabledButton]}
+                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
                 onPress={handleLogin}
                 disabled={loading}>
                 {loading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={styles.buttonText}>Log In</Text>
+                  <Text style={styles.loginButtonText}>Sign In</Text>
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Don't have an account?</Text>
               <TouchableOpacity
-                onPress={() => navigation.navigate('SignUpScreen')}>
-                <Text style={styles.footerLink}> Sign Up</Text>
+                style={styles.signUpButton}
+                onPress={() => navigation.navigate('SignUpScreen')}
+                disabled={loading}>
+                <Text style={styles.signUpText}>
+                  Don't have an account? <Text style={styles.signUpTextBold}>Sign Up</Text>
+                </Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -155,8 +164,7 @@ const LoginScreen = ({navigation}) => {
 
 const styles = StyleSheet.create({
   statusBarContainer: {
-    height: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    overflow: 'hidden',
+    height: h(2),
   },
   statusBarGradient: {
     flex: 1,
@@ -164,101 +172,77 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContainer: {
+  scrollContent: {
     flexGrow: 1,
-    paddingBottom: h(5),
+    justifyContent: 'center',
   },
-  header: {
-    alignItems: 'center',
-    marginTop: h(10),
-    marginBottom: h(6),
-  },
-  logo: {
-    width: w(30),
-    height: h(15),
-    marginBottom: h(3),
+  formContainer: {
+    padding: w(5),
   },
   title: {
     fontSize: f(4),
+    color: '#FFF',
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: h(1),
+    fontFamily: 'Poppins-Bold',
+    alignSelf: 'center',
   },
   subtitle: {
     fontSize: f(2.2),
-    color: 'rgba(255,255,255,0.8)',
-  },
-  formContainer: {
-    marginHorizontal: w(8),
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: h(4),
+    fontFamily: 'Poppins-Regular',
+    alignSelf: 'center',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: w(3),
-    paddingHorizontal: w(4),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: w(2),
     marginBottom: h(2),
-    height: h(6.5),
+    paddingHorizontal: w(4),
   },
-  icon: {
-    color: '#888',
+  inputIcon: {
     marginRight: w(3),
   },
   input: {
     flex: 1,
+    height: Platform.OS === 'ios' ? h(6) : h(5),
+    color: '#FFF',
     fontSize: f(2),
-    color: '#333',
-    height: '100%',
+    fontFamily: 'Poppins-Regular',
   },
   eyeIcon: {
-    padding: w(2),
+    padding: w(1),
   },
-  button: {
-    backgroundColor: 'white',
-    borderRadius: w(3),
-    height: h(6.5),
-    justifyContent: 'center',
+  loginButton: {
+    backgroundColor: '#FFF',
+    borderRadius: w(2),
+    paddingVertical: Platform.OS === 'ios' ? h(1.5) : h(1.2),
     alignItems: 'center',
     marginTop: h(2),
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  buttonText: {
-    fontSize: f(2.5),
-    fontWeight: 'bold',
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+  loginButtonText: {
     color: '#F7374F',
+    fontSize: f(2.2),
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: h(1.5),
+  signUpButton: {
+    marginTop: h(3),
+    alignItems: 'center',
   },
-  forgotPasswordText: {
-    color: 'white',
+  signUpText: {
+    color: '#FFF',
     fontSize: f(2),
+    fontFamily: 'Poppins-Regular',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: h(6),
-  },
-  footerText: {
-    color: 'white',
-    fontSize: f(2),
-  },
-  footerLink: {
-    color: 'blue',
-    fontSize: f(2.1),
-    fontWeight: 'bold',
-    textDecorationLine: 'none',
-  },
-  disabledButton: {
-    opacity: 0.6,
+  signUpTextBold: {
+    fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
 });
 
