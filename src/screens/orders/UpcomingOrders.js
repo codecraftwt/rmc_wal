@@ -141,6 +141,7 @@ const UpcomingOrders = ({ navigation, route }) => {
   const [showAll, setShowAll] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const slideAnim = useState(new Animated.Value(0))[0];
 
   const dispatch = useDispatch();
@@ -151,35 +152,16 @@ const UpcomingOrders = ({ navigation, route }) => {
   const deleteLoading = useSelector(state => state.order.deleteLoading);
 
   useEffect(() => {
+    if (isInitialLoad) {
+      dispatch(fetchUpcomingOrders());
+      setIsInitialLoad(false);
+    }
+
     if (route.params?.showSuccess) {
       Alert.alert('Success', route.params.message);
       navigation.setParams({ showSuccess: undefined, message: undefined });
     }
-  }, [route.params, navigation]);
-
-  useEffect(() => {
-    dispatch(fetchUpcomingOrders());
-  }, [dispatch]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const refreshData = async () => {
-        try {
-          await dispatch(fetchUpcomingOrders()).unwrap();
-        } catch (error) {
-          console.error('Error fetching orders:', error);
-        }
-      };
-
-      refreshData();
-    }, [dispatch])
-  );
-
-  useEffect(() => {
-    if (upcomingOrders && !loading && !error) {
-      setShowAll(false);
-    }
-  }, [upcomingOrders, loading, error]);
+  }, [dispatch, isInitialLoad, route.params, navigation]);
 
   useEffect(() => {
     const backAction = () => {
@@ -193,9 +175,15 @@ const UpcomingOrders = ({ navigation, route }) => {
     return () => backHandler.remove();
   }, [navigation]);
 
+  useEffect(() => {
+    if (upcomingOrders && !loading && !error) {
+      setShowAll(false);
+    }
+  }, [upcomingOrders, loading, error]);
+
   const transformOrder = order => {
-        const customer = customers?.find(c => c.id === order.customer_id);
-    
+    const customer = customers?.find(c => c.id === order.customer_id);
+
     const transformedOrder = {
       id: order.id,
       customer_details: customer?.name || order.customer_details || 'Unknown Customer',
