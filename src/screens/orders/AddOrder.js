@@ -325,7 +325,8 @@ const AddOrder = ({ navigation }) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingContainer}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        enabled>
         <LinearGradient
           colors={['#F8FAFF', '#F0F4FF']}
           style={styles.container}
@@ -340,7 +341,8 @@ const AddOrder = ({ navigation }) => {
           <ScrollView
             contentContainerStyle={styles.formContainer}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag">
             <View style={styles.fieldContainer}>
               <View style={styles.fieldLabel}>
                 <Icon

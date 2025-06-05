@@ -12,6 +12,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { h, w, f } from 'walstar-rn-responsive';
 import LinearGradient from 'react-native-linear-gradient';
@@ -393,233 +394,240 @@ const EditOrder = ({ route, navigation }) => {
         end={{ x: 1, y: 0 }}>
         <SafeAreaView edges={['top']} style={styles.statusBarAreaInner} />
       </LinearGradient>
-      <View style={styles.container}>
-        <Header
-          title="Edit Order"
-          navigation={navigation}
-          showBackButton="arrow-back"
-        />
-        {isUpdating && (
-          <View style={styles.loadingOverlay}>
-            <View style={styles.loadingContent}>
-              <ActivityIndicator size="large" color="#F7374F" />
-              <Text style={styles.loadingText}>Updating order...</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingContainer}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+        <View style={styles.container}>
+          <Header
+            title="Edit Order"
+            navigation={navigation}
+            showBackButton="arrow-back"
+          />
+          {isUpdating && (
+            <View style={styles.loadingOverlay}>
+              <View style={styles.loadingContent}>
+                <ActivityIndicator size="large" color="#F7374F" />
+                <Text style={styles.loadingText}>Updating order...</Text>
+              </View>
             </View>
-          </View>
-        )}
-        <ScrollView
-          contentContainerStyle={styles.content}
-          scrollEnabled={!isUpdating}>
-          <View style={[styles.card, isUpdating && styles.disabledCard]}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Company Name</Text>
-              <CustomDropdown
-                value={formData.customer_id}
-                onValueChange={value => {
-                  const selectedCustomer = customers.find(c => c.id === value);
-                  if (selectedCustomer) {
+          )}
+          <ScrollView
+            contentContainerStyle={styles.content}
+            scrollEnabled={!isUpdating}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <View style={[styles.card, isUpdating && styles.disabledCard]}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Company Name</Text>
+                <CustomDropdown
+                  value={formData.customer_id}
+                  onValueChange={value => {
+                    const selectedCustomer = customers.find(c => c.id === value);
+                    if (selectedCustomer) {
+                      setFormData(prev => ({
+                        ...prev,
+                        customer_id: selectedCustomer.id,
+                        customer_details: selectedCustomer.name,
+                      }));
+                    }
+                  }}
+                  items={customers || []}
+                  placeholder={formData.customer_details || "Select a company"}
+                  loading={customersLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => item.name}
+                  getValue={item => item.id}
+                />
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Product Grade</Text>
+                <CustomDropdown
+                  value={formData.product_grade_id}
+                  onValueChange={value => {
+                    const selectedGrade = productGrades.find(g => g.id === value);
                     setFormData(prev => ({
                       ...prev,
-                      customer_id: selectedCustomer.id,
-                      customer_details: selectedCustomer.name,
+                      product_grade_id: value,
+                      product_grade_name: selectedGrade ? selectedGrade.name : '',
                     }));
-                  }
-                }}
-                items={customers || []}
-                placeholder={formData.customer_details || "Select a company"}
-                loading={customersLoading}
-                style={styles.pickerContainer}
-                getLabel={item => item.name}
-                getValue={item => item.id}
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Product Grade</Text>
-              <CustomDropdown
-                value={formData.product_grade_id}
-                onValueChange={value => {
-                  const selectedGrade = productGrades.find(g => g.id === value);
-                  setFormData(prev => ({
-                    ...prev,
-                    product_grade_id: value,
-                    product_grade_name: selectedGrade ? selectedGrade.name : '',
-                  }));
-                }}
-                items={productGrades || []}
-                placeholder={formData.product_grade_id || "Select a product grade"}
-                loading={productGradesLoading}
-                style={styles.pickerContainer}
-                getLabel={item => item.name}
-                getValue={item => item.id}
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Quantity</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.quantity}
-                onChangeText={text => handleChange('quantity', text)}
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: w(2) }]}>
-                <Text style={styles.label}>Date</Text>
-                <TouchableOpacity
-                  onPress={() => setDatePickerOpen(true)}
-                  style={styles.dateInput}>
-                  <Text
-                    style={[
-                      styles.dateInputText,
-                      !formData.order_date && { color: '#999' },
-                    ]}>
-                    {formData.order_date || 'Select a date'}
-                  </Text>
-                  <Icon name="calendar" size={f(2.5)} color="#F7374F" />
-                </TouchableOpacity>
+                  }}
+                  items={productGrades || []}
+                  placeholder={formData.product_grade_id || "Select a product grade"}
+                  loading={productGradesLoading}
+                  style={styles.pickerContainer}
+                  getLabel={item => item.name}
+                  getValue={item => item.id}
+                />
               </View>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.label}>Time</Text>
-                <TouchableOpacity
-                  onPress={() => setTimePickerOpen(true)}
-                  style={styles.dateInput}>
-                  <Text
-                    style={[
-                      styles.dateInputText,
-                      !formData.on_site_time && { color: '#999' },
-                    ]}>
-                    {formData.on_site_time || 'Select time'}
-                  </Text>
-                  <Icon name="time" size={f(2.5)} color="#F7374F" />
-                </TouchableOpacity>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Quantity</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.quantity}
+                  onChangeText={text => handleChange('quantity', text)}
+                  keyboardType="numeric"
+                />
               </View>
-            </View>
-            <DatePicker
-              modal
-              open={datePickerOpen}
-              date={selectedDate}
-              onConfirm={handleDateConfirm}
-              onCancel={() => setDatePickerOpen(false)}
-              mode="date"
-              minimumDate={new Date()}
-            />
-            <DatePicker
-              modal
-              open={timePickerOpen}
-              date={selectedTime}
-              onConfirm={handleTimeConfirm}
-              onCancel={() => setTimePickerOpen(false)}
-              mode="time"
-            />
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Address</Text>
-              <TextInput
-                style={[styles.input, { height: h(8) }]}
-                value={formData.address}
-                onChangeText={text => handleChange('address', text)}
-                multiline
+              <View style={styles.row}>
+                <View style={[styles.inputGroup, { flex: 1, marginRight: w(2) }]}>
+                  <Text style={styles.label}>Date</Text>
+                  <TouchableOpacity
+                    onPress={() => setDatePickerOpen(true)}
+                    style={styles.dateInput}>
+                    <Text
+                      style={[
+                        styles.dateInputText,
+                        !formData.order_date && { color: '#999' },
+                      ]}>
+                      {formData.order_date || 'Select a date'}
+                    </Text>
+                    <Icon name="calendar" size={f(2.5)} color="#F7374F" />
+                  </TouchableOpacity>
+                </View>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.label}>Time</Text>
+                  <TouchableOpacity
+                    onPress={() => setTimePickerOpen(true)}
+                    style={styles.dateInput}>
+                    <Text
+                      style={[
+                        styles.dateInputText,
+                        !formData.on_site_time && { color: '#999' },
+                      ]}>
+                      {formData.on_site_time || 'Select time'}
+                    </Text>
+                    <Icon name="time" size={f(2.5)} color="#F7374F" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <DatePicker
+                modal
+                open={datePickerOpen}
+                date={selectedDate}
+                onConfirm={handleDateConfirm}
+                onCancel={() => setDatePickerOpen(false)}
+                mode="date"
+                minimumDate={new Date()}
               />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Order Type</Text>
-              <View style={styles.statusOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    formData.order_type === '1' && styles.statusButtonActive,
-                  ]}
-                  onPress={() => handleChange('order_type', '1')}>
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      formData.order_type === '1' &&
-                      styles.statusButtonTextActive,
-                    ]}>
-                    Pumping
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    formData.order_type === '2' && styles.statusButtonActive,
-                  ]}
-                  onPress={() => handleChange('order_type', '2')}>
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      formData.order_type === '2' &&
-                      styles.statusButtonTextActive,
-                    ]}>
-                    Dumping
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Description</Text>
-              <TextInput
-                style={[styles.input, { height: h(8) }]}
-                value={formData.description || ''}
-                onChangeText={text => handleChange('description', text)}
-                multiline
+              <DatePicker
+                modal
+                open={timePickerOpen}
+                date={selectedTime}
+                onConfirm={handleTimeConfirm}
+                onCancel={() => setTimePickerOpen(false)}
+                mode="time"
               />
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Status</Text>
-              <View style={styles.statusOptions}>
-                <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    formData.confirm === '1' && styles.statusButtonActive,
-                  ]}
-                  onPress={() => handleChange('confirm', '1')}>
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      formData.confirm === '1' && styles.statusButtonTextActive,
-                    ]}>
-                    Confirmed
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.statusButton,
-                    formData.confirm === '0' && styles.statusButtonActive,
-                  ]}
-                  onPress={() => handleChange('confirm', '0')}>
-                  <Text
-                    style={[
-                      styles.statusButtonText,
-                      formData.confirm === '0' && styles.statusButtonTextActive,
-                    ]}>
-                    Pending
-                  </Text>
-                </TouchableOpacity>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Address</Text>
+                <TextInput
+                  style={[styles.input, { height: h(8) }]}
+                  value={formData.address}
+                  onChangeText={text => handleChange('address', text)}
+                  multiline
+                />
               </View>
-            </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Order Type</Text>
+                <View style={styles.statusOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.statusButton,
+                      formData.order_type === '1' && styles.statusButtonActive,
+                    ]}
+                    onPress={() => handleChange('order_type', '1')}>
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.order_type === '1' &&
+                        styles.statusButtonTextActive,
+                      ]}>
+                      Pumping
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.statusButton,
+                      formData.order_type === '2' && styles.statusButtonActive,
+                    ]}
+                    onPress={() => handleChange('order_type', '2')}>
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.order_type === '2' &&
+                        styles.statusButtonTextActive,
+                      ]}>
+                      Dumping
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Description</Text>
+                <TextInput
+                  style={[styles.input, { height: h(8) }]}
+                  value={formData.description || ''}
+                  onChangeText={text => handleChange('description', text)}
+                  multiline
+                />
+              </View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Status</Text>
+                <View style={styles.statusOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.statusButton,
+                      formData.confirm === '1' && styles.statusButtonActive,
+                    ]}
+                    onPress={() => handleChange('confirm', '1')}>
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.confirm === '1' && styles.statusButtonTextActive,
+                      ]}>
+                      Confirmed
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.statusButton,
+                      formData.confirm === '0' && styles.statusButtonActive,
+                    ]}
+                    onPress={() => handleChange('confirm', '0')}>
+                    <Text
+                      style={[
+                        styles.statusButtonText,
+                        formData.confirm === '0' && styles.statusButtonTextActive,
+                      ]}>
+                      Pending
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-            <LinearGradient
-              colors={['#F7374F', '#FF6B6B']}
-              style={styles.updateButton}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}>
-              <TouchableOpacity
-                onPress={handleUpdate}
-                disabled={isUpdating}
-                style={styles.updateButtonInner}>
-                {isUpdating ? (
-                  <View style={styles.buttonLoadingContainer}>
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text style={[styles.updateButtonText, styles.loadingText]}>Updating...</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.updateButtonText}>Update Order</Text>
-                )}
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </ScrollView>
-      </View>
+              <LinearGradient
+                colors={['#F7374F', '#FF6B6B']}
+                style={styles.updateButton}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}>
+                <TouchableOpacity
+                  onPress={handleUpdate}
+                  disabled={isUpdating}
+                  style={styles.updateButtonInner}>
+                  {isUpdating ? (
+                    <View style={styles.buttonLoadingContainer}>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={[styles.updateButtonText, styles.loadingText]}>Updating...</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.updateButtonText}>Update Order</Text>
+                  )}
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </>
   );
 };
@@ -639,14 +647,14 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: w(4),
-    paddingBottom: h(4),
+    paddingBottom: Platform.OS === 'ios' ? h(15) : h(10),
   },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: w(3),
     padding: w(4),
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -694,23 +702,6 @@ const styles = StyleSheet.create({
   statusButtonTextActive: {
     color: '#FFFFFF',
   },
-  // updateButton: {
-  //   backgroundColor: '#F7374F',
-  //   paddingVertical: h(1),
-  //   borderRadius: w(2),
-  //   marginTop: h(2),
-  // },
-  // updateButtonInner: {
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   minHeight: h(4),
-  // },
-  // updateButtonText: {
-  //   fontSize: f(2.2),
-  //   color: '#FFFFFF',
-  //   fontWeight: '600',
-  //   fontFamily: 'Poppins-SemiBold',
-  // },
   pickerContainer: {
     backgroundColor: '#F5F7FA',
     borderRadius: w(2),
@@ -899,7 +890,6 @@ const styles = StyleSheet.create({
   },
   updateButton: {
     backgroundColor: '#F7374F',
-    // paddingVertical: h(1.5),
     paddingVertical: Platform.OS === 'android' ? h(1.5) : h(0),
     borderRadius: w(2),
     marginTop: h(2),
@@ -914,6 +904,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontFamily: 'Poppins-SemiBold',
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
 });
 export default EditOrder;
